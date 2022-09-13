@@ -24,7 +24,7 @@ export class NewLine extends EmacsCommand {
   public readonly id = "newLine";
 
   public execute(textEditor: TextEditor, isInMarkMode: boolean, prefixArgument: number | undefined) {
-    this.emacsController.exitMarkMode();
+    this.emacsController.deactivateMark();
 
     textEditor.selections = textEditor.selections.map((selection) => new Selection(selection.active, selection.active));
 

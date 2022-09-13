@@ -84,7 +84,9 @@ export class MarkSexp extends EmacsCommand {
   public readonly id = "paredit.markSexp";
   private continuing = false;
 
-  public async execute(textEditor: TextEditor, isInMarkMode: boolean, prefixArgument: number | undefined) {
+  public async execute(
+    textEditor: TextEditor, isInMarkMode: boolean, prefixArgument: number | undefined
+  ): Promise<void> {
     const arg = prefixArgument === undefined ? 1 : prefixArgument;
 
     const repeat = Math.abs(arg);
@@ -100,15 +102,12 @@ export class MarkSexp extends EmacsCommand {
 
     textEditor.selections = newSelections;
     if (newSelections.some((newSelection) => !newSelection.isEmpty)) {
-      this.emacsController.enterMarkMode(false);
+      this.emacsController.deactivateMark();
     }
 
     // TODO: Print "Mark set" message. With the current implementation, the message will disappear just after showing because MessageManager.onInterupt() is asynchronously called for setting the new selections and revealPrimaryActive() below.
 
-    this.emacsController.pushMark(
-      newSelections.map((newSelection) => newSelection.active),
-      this.continuing
-    );
+    this.emacsController.pushMark();
 
     revealPrimaryActive(textEditor);
 
@@ -123,7 +122,11 @@ export class MarkSexp extends EmacsCommand {
 export class KillSexp extends KillYankCommand {
   public readonly id = "paredit.killSexp";
 
-  public async execute(textEditor: TextEditor, isInMarkMode: boolean, prefixArgument: number | undefined) {
+  public async execute(
+    textEditor: TextEditor,
+    isInMarkMode: boolean,
+    prefixArgument: number | undefined
+  ): Promise<void> {
     const repeat = prefixArgument === undefined ? 1 : prefixArgument;
     if (repeat <= 0) {
       return;
@@ -146,7 +149,11 @@ export class KillSexp extends KillYankCommand {
 export class BackwardKillSexp extends KillYankCommand {
   public readonly id = "paredit.backwardKillSexp";
 
-  public async execute(textEditor: TextEditor, isInMarkMode: boolean, prefixArgument: number | undefined) {
+  public async execute(
+    textEditor: TextEditor,
+    isInMarkMode: boolean,
+    prefixArgument: number | undefined
+  ): Promise<void> {
     const repeat = prefixArgument === undefined ? 1 : prefixArgument;
     if (repeat <= 0) {
       return;

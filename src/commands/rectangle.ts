@@ -106,7 +106,7 @@ abstract class EditRectangle extends RectangleKillYankCommand {
 
       revealPrimaryActive(textEditor);
 
-      this.emacsController.exitMarkMode();
+      this.emacsController.deactivateMark();
       makeSelectionsEmpty(textEditor);
     }
   }
@@ -220,7 +220,7 @@ export class OpenRectangle extends EmacsCommand {
       });
     });
 
-    this.emacsController.exitMarkMode();
+    this.emacsController.deactivateMark();
     textEditor.selections = starts.map((s) => new vscode.Selection(s, s));
   }
 }
@@ -244,7 +244,7 @@ export class ClearRectangle extends EmacsCommand {
       });
     });
 
-    this.emacsController.exitMarkMode();
+    this.emacsController.deactivateMark();
     makeSelectionsEmpty(textEditor);
   }
 }
@@ -280,7 +280,7 @@ export class StringRectangle extends EmacsCommand {
       });
     });
 
-    this.emacsController.exitMarkMode();
+    this.emacsController.deactivateMark();
     makeSelectionsEmpty(textEditor);
   }
 }
@@ -352,7 +352,7 @@ export class ReplaceKillRingToRectangle extends EmacsCommand {
       }
     });
 
-    this.emacsController.exitMarkMode();
+    this.emacsController.deactivateMark();
 
     const finalCursor = new vscode.Position(finalCursorLine, finalCursorChar);
     textEditor.selections = [new vscode.Selection(finalCursor, finalCursor)];

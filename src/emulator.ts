@@ -19,16 +19,17 @@ import { logger } from "./logger";
 import { MessageManager } from "./message";
 import { PrefixArgumentHandler } from "./prefix-argument";
 import { Configuration } from "./configuration/configuration";
-import { MarkRing } from "./mark-ring";
+import { Mark, MarkRing } from "./mark-ring";
 import { convertSelectionToRectSelections } from "./rectangle";
 import { InputBoxMinibuffer, Minibuffer } from "./minibuffer";
+import { revealPrimaryActive } from "./commands/helpers/reveal";
 
 export interface IEmacsController {
   runCommand(commandName: string): void | Thenable<unknown>;
 
-  enterMarkMode(pushMark?: boolean): void;
-  exitMarkMode(): void;
-  pushMark(positions: vscode.Position[], replace?: boolean): void;
+  deactivateRegion(): void;
+  deactivateMark(): void;
+  pushMark(mark?: Mark, nomsg?: boolean, activate?: boolean): void;
 
   readonly inRectMarkMode: boolean;
   readonly nativeSelections: readonly vscode.Selection[];
@@ -43,16 +44,24 @@ export class EmacsEmulator implements IEmacsController, vscode.Disposable {
   private commandRegistry: EmacsCommandRegistry;
 
   private markRing: MarkRing;
-  private prevExchangedMarks: vscode.Position[] | null;
+  private mark: Mark | null;
 
-  private _isInMarkMode = false;
-  public get isInMarkMode(): boolean {
-    return this._isInMarkMode;
+  private _isMarkActive = false;
+  public get isMarkActive(): boolean {
+    return this._isMarkActive;
+  }
+
+  public get isRegionActive(): boolean {
+    return this.hasNonEmptySelection();
   }
 
   private rectMode = false;
   public get inRectMarkMode(): boolean {
-    return this._isInMarkMode && this.rectMode;
+    return this._isMarkActive && this.rectMode;
+  }
+
+  public get numCursors(): number {
+    return this.textEditor.selections.length;
   }
 
   /**
@@ -95,7 +104,7 @@ export class EmacsEmulator implements IEmacsController, vscode.Disposable {
     this._nativeSelections = this.rectMode ? [] : textEditor.selections; // TODO: `[]` is workaround.
 
     this.markRing = new MarkRing(Configuration.instance.markRingMax);
-    this.prevExchangedMarks = null;
+    this.mark = null;
 
     this.prefixArgumentHandler = new PrefixArgumentHandler(
       this.onPrefixArgumentChange,
@@ -213,7 +222,7 @@ export class EmacsEmulator implements IEmacsController, vscode.Disposable {
           )
         )
       ) {
-        this.exitMarkMode();
+        this.deactivateMark(false);
       }
 
       this.onDidInterruptTextEditor();
@@ -234,8 +243,8 @@ export class EmacsEmulator implements IEmacsController, vscode.Disposable {
    * An extended version of the native `type` command with prefix argument integration.
    */
   public typeChar(char: string): void | Thenable<unknown> {
-    if (this.isInMarkMode) {
-      this.exitMarkMode();
+    if (this.isMarkActive) {
+      this.deactivateMark();
     }
 
     if (char === "-" && this.prefixArgumentHandler.minusSignAcceptable) {
@@ -344,7 +353,7 @@ export class EmacsEmulator implements IEmacsController, vscode.Disposable {
 
     const prefixArgument = this.prefixArgumentHandler.getPrefixArgument();
 
-    const ret = command.run(this.textEditor, this.isInMarkMode, prefixArgument);
+    const ret = command.run(this.textEditor, this.isMarkActive, prefixArgument);
     this.afterCommand();
     return ret;
   }
@@ -359,13 +368,11 @@ export class EmacsEmulator implements IEmacsController, vscode.Disposable {
       return this.popMark();
     }
 
-    if (this.isInMarkMode && !this.hasNonEmptySelection()) {
+    if (this.isMarkActive && !this.hasNonEmptySelection()) {
       // Toggle if enterMarkMode is invoked continuously without any cursor move.
-      this.exitMarkMode();
-      MessageManager.showMessage("Mark deactivated");
+      this.deactivateMark();
     } else {
-      this.enterMarkMode();
-      MessageManager.showMessage("Mark activated");
+      this.pushMark();
     }
   }
 
@@ -382,13 +389,13 @@ export class EmacsEmulator implements IEmacsController, vscode.Disposable {
 
   private normalCursorStyle?: vscode.TextEditorCursorStyle = undefined;
   private enterRectangleMarkMode(): void {
-    if (this.isInMarkMode) {
+    if (this.isMarkActive) {
       MessageManager.showMessage("Rectangle-Mark mode enabled in current buffer");
     } else {
       MessageManager.showMessage("Mark set (rectangle-mode)");
     }
 
-    this.enterMarkMode();
+    this.pushMark();
     this.rectMode = true;
     vscode.commands.executeCommand("setContext", "emacs-mcx.inRectMarkMode", true);
     this.applyNativeSelectionsAsRect();
@@ -406,8 +413,8 @@ export class EmacsEmulator implements IEmacsController, vscode.Disposable {
     vscode.commands.executeCommand("setContext", "emacs-mcx.inRectMarkMode", false);
     this.textEditor.selections = this._nativeSelections;
 
-    if (!this.isInMarkMode) {
-      this.makeSelectionsEmpty();
+    if (!this.isMarkActive) {
+      this.deactivateRegion();
     }
 
     this.textEditor.options.cursorStyle = this.normalCursorStyle;
@@ -424,11 +431,11 @@ export class EmacsEmulator implements IEmacsController, vscode.Disposable {
     if (this.hasMultipleSelections() && !this.hasNonEmptySelection()) {
       this.stopMultiCursor();
     } else {
-      this.makeSelectionsEmpty();
+      this.deactivateRegion();
     }
 
-    if (this.isInMarkMode) {
-      this.exitMarkMode();
+    if (this.isMarkActive) {
+      this.deactivateMark();
     }
 
     this.onDidInterruptTextEditor();
@@ -439,64 +446,81 @@ export class EmacsEmulator implements IEmacsController, vscode.Disposable {
     MessageManager.showMessage("Quit");
   }
 
-  public enterMarkMode(pushMark = true): void {
-    this._isInMarkMode = true;
+  public activateMark(nomsg = false): void {
+    this._isMarkActive = true;
     this.rectMode = false;
 
     // At this moment, the only way to set the context for `when` conditions is `setContext` command.
     // The discussion is ongoing in https://github.com/Microsoft/vscode/issues/10471
     // TODO: How to write unittest for `setContext`?
     vscode.commands.executeCommand("setContext", "emacs-mcx.inMarkMode", true);
-
-    if (pushMark) {
-      this.pushMark(this.textEditor.selections.map((selection) => selection.active));
-      this.textEditor.selections = this.textEditor.selections.map(
-        (selection) => new Selection(selection.active, selection.active)
-      );
+    if (!nomsg) {
+      MessageManager.showMessage("Mark activated");
     }
   }
 
-  public pushMark(positions: vscode.Position[], replace = false): void {
-    this.prevExchangedMarks = null;
-    this.markRing.push(positions, replace);
+  private _setCursorTo(position: Mark) {
+    this.textEditor.selections = position.toCursor();
+  }
+
+  public async pushMark(newMark: Mark | undefined = undefined, nomsg = false, activate = false): Promise<void> {
+    if (newMark === undefined) {
+      newMark = Mark.fromCursor(this.textEditor.selections);
+      await vscode.commands.executeCommand("editor.action.setSelectionAnchor");
+    } else {
+      const cursor = Mark.fromCursor(this.textEditor.selections);
+      this._setCursorTo(newMark);
+      await vscode.commands.executeCommand("editor.action.setSelectionAnchor");
+      this._setCursorTo(cursor);
+    }
+    if (this.mark) {
+      this.markRing.push(this.mark);
+    }
+    this.mark = newMark;
+    if (!nomsg) {
+      MessageManager.showMessage("Mark set");
+    }
+    if (activate) {
+      this.activateMark(nomsg);
+    }
   }
 
   public popMark(): void {
     const prevMark = this.markRing.pop();
     if (prevMark) {
-      this.textEditor.selections = prevMark.map((position) => new Selection(position, position));
-      this.textEditor.revealRange(this.textEditor.selection);
+      this.textEditor.selections = prevMark.toCursor(this.textEditor.selections);
+      revealPrimaryActive(this.textEditor);
     }
   }
 
-  public exchangePointAndMark(): void {
-    const prevMarks = this.prevExchangedMarks || this.markRing.getTop();
-    this.enterMarkMode(false);
-    this.prevExchangedMarks = this.textEditor.selections.map((selection) => selection.active);
-
-    if (prevMarks) {
-      const affectedLen = Math.min(this.textEditor.selections.length, prevMarks.length);
-      const affectedSelections = this.textEditor.selections.slice(0, affectedLen).map((selection, i) => {
-        // `i < affectedLen <= prevMarks.length`,
-        // so the `noUncheckedIndexedAccess` rule can be skipped here.
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const prevMark = prevMarks[i]!;
-        return new vscode.Selection(selection.active, prevMark);
-      });
-      const newSelections = affectedSelections.concat(this.textEditor.selections.slice(affectedLen));
-      this.textEditor.selections = newSelections;
-      this.textEditor.revealRange(this.textEditor.selection);
+  public async exchangePointAndMark(): Promise<void> {
+    if (this.mark) {
+      await vscode.commands.executeCommand("editor.action.setSelectionAnchor");
+      const cursor = Mark.fromCursor(this.textEditor.selections);
+      if (this.isMarkActive) {
+        this.textEditor.selections = this.mark.toAnchor(this.textEditor.selections);
+      } else {
+        this.textEditor.selections = this.mark.toCursor(this.textEditor.selections);
+      }
+      this.mark = cursor;
+      revealPrimaryActive(this.textEditor);
+    } else {
+      MessageManager.showMessage("No mark set in this buffer");
     }
   }
 
-  public exitMarkMode(): void {
-    this._isInMarkMode = false;
+  public deactivateMark(andRegion = true): void {
+    this._isMarkActive = false;
     this.exitRectangleMarkMode();
+    if (andRegion) {
+      this.deactivateRegion();
+    }
     vscode.commands.executeCommand("setContext", "emacs-mcx.inMarkMode", false);
   }
 
   public executeCommandWithPrefixArgument<T>(
     command: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     args: any = null,
     prefixArgumentKey = "prefixArgument"
   ): Thenable<T | undefined> {
@@ -510,9 +534,11 @@ export class EmacsEmulator implements IEmacsController, vscode.Disposable {
     return this.prefixArgumentHandler.getPrefixArgument();
   }
 
-  private makeSelectionsEmpty() {
+  public deactivateRegion(): void {
     const srcSelections = this.rectMode ? this._nativeSelections : this.textEditor.selections;
-    this.textEditor.selections = srcSelections.map((selection) => new Selection(selection.active, selection.active));
+    this.textEditor.selections = srcSelections.map(
+      (selection) => new Selection(selection.active, selection.active)
+    );
   }
 
   private stopMultiCursor() {

@@ -6,7 +6,6 @@ import {
   travelForward as travelForwardParagraph,
   travelBackward as travelBackwardParagraph,
 } from "./helpers/paragraph";
-import { MessageManager } from "../message";
 import { revealPrimaryActive } from "./helpers/reveal";
 
 // TODO: be unnecessary
@@ -305,8 +304,7 @@ export class BeginningOfBuffer extends EmacsCommand {
     }
 
     if (!isInMarkMode) {
-      this.emacsController.pushMark(textEditor.selections.map((selection) => selection.anchor));
-      MessageManager.showMessage("Mark set");
+      this.emacsController.pushMark();
     }
     return vscode.commands.executeCommand<void>(isInMarkMode ? "cursorTopSelect" : "cursorTop");
   }
@@ -327,8 +325,7 @@ export class EndOfBuffer extends EmacsCommand {
     }
 
     if (!isInMarkMode) {
-      this.emacsController.pushMark(textEditor.selections.map((selection) => selection.anchor));
-      MessageManager.showMessage("Mark set");
+      this.emacsController.pushMark();
     }
     return vscode.commands.executeCommand<void>(isInMarkMode ? "cursorBottomSelect" : "cursorBottom");
   }

@@ -5,6 +5,7 @@ import { IEmacsController } from "../emulator";
 import { MessageManager } from "../message";
 import { revealPrimaryActive } from "./helpers/reveal";
 import { WorkspaceConfigCache } from "../workspace-configuration";
+import { Mark } from "../mark-ring";
 
 export interface SearchState {
   startSelections: readonly vscode.Selection[] | undefined;
@@ -152,7 +153,7 @@ export class IsearchExit extends IsearchCommand {
 
   public execute(textEditor: TextEditor, isInMarkMode: boolean, prefixArgument: number | undefined): Thenable<void> {
     if (this.searchState.startSelections) {
-      this.emacsController.pushMark(this.searchState.startSelections.map((selection) => selection.anchor));
+      this.emacsController.pushMark(Mark.fromAnchor(this.searchState.startSelections), true);
       MessageManager.showMessage("Mark saved where search started");
     }
     return vscode.commands

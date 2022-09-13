@@ -1,4 +1,5 @@
 import assert from "assert";
+import { Mark } from "src/mark-ring";
 import { Selection, TextEditor } from "vscode";
 import { EmacsEmulator } from "../../../emulator";
 import { KillRing } from "../../../kill-yank/kill-ring";
@@ -305,9 +306,9 @@ suite("paredit.mark-sexp", () => {
 
     assertTextEqual(activeTextEditor, initialText);
     assertSelectionsEqual(activeTextEditor, new Selection(0, 0, 7, 1));
-    assert.ok(emulator.isInMarkMode);
+    assert.ok(emulator.isMarkActive);
 
-    emulator.exitMarkMode();
+    emulator.deactivateMark();
     activeTextEditor.selection = new Selection(0, 0, 0, 0);
     emulator.popMark();
     assertCursorsEqual(activeTextEditor, [7, 1]);
@@ -315,7 +316,7 @@ suite("paredit.mark-sexp", () => {
 
   test("mark inner parentheses continuously", async () => {
     setEmptyCursors(activeTextEditor, [1, 0]);
-    emulator.pushMark(activeTextEditor.selections.map((s) => s.active));
+    emulator.pushMark(Mark.fromCursor(activeTextEditor.selections));
 
     await emulator.runCommand("paredit.markSexp");
 
@@ -327,7 +328,7 @@ suite("paredit.mark-sexp", () => {
     assertTextEqual(activeTextEditor, initialText);
     assertSelectionsEqual(activeTextEditor, new Selection(1, 0, 6, 3));
 
-    emulator.exitMarkMode();
+    emulator.deactivateMark();
     activeTextEditor.selection = new Selection(0, 0, 0, 0);
 
     emulator.popMark();
@@ -338,7 +339,7 @@ suite("paredit.mark-sexp", () => {
 
   test("mark inner parentheses with a positive prefix argument", async () => {
     setEmptyCursors(activeTextEditor, [1, 0]);
-    emulator.pushMark(activeTextEditor.selections.map((s) => s.active));
+    emulator.pushMark(Mark.fromCursor(activeTextEditor.selections));
 
     await emulator.universalArgument();
     await emulator.subsequentArgumentDigit(2);
@@ -347,7 +348,7 @@ suite("paredit.mark-sexp", () => {
     assertTextEqual(activeTextEditor, initialText);
     assertSelectionsEqual(activeTextEditor, new Selection(1, 0, 6, 3));
 
-    emulator.exitMarkMode();
+    emulator.deactivateMark();
     activeTextEditor.selection = new Selection(0, 0, 0, 0);
 
     emulator.popMark();
@@ -358,7 +359,7 @@ suite("paredit.mark-sexp", () => {
 
   test("mark inner parentheses with a negative prefix argument", async () => {
     setEmptyCursors(activeTextEditor, [6, 3]);
-    emulator.pushMark(activeTextEditor.selections.map((s) => s.active));
+    emulator.pushMark(Mark.fromCursor(activeTextEditor.selections));
 
     await emulator.negativeArgument();
     await emulator.subsequentArgumentDigit(2);
@@ -367,7 +368,7 @@ suite("paredit.mark-sexp", () => {
     assertTextEqual(activeTextEditor, initialText);
     assertSelectionsEqual(activeTextEditor, new Selection(6, 3, 1, 2));
 
-    emulator.exitMarkMode();
+    emulator.deactivateMark();
     activeTextEditor.selection = new Selection(0, 0, 0, 0);
 
     emulator.popMark();
