@@ -31,7 +31,7 @@ suite("moveBeginning/EndOfLine", () => {
 
       test("with mark", async () => {
         setEmptyCursors(activeTextEditor, [1, 1000]);
-        emulator.setMarkCommand();
+        await emulator.runCommand("setMarkCommand");
         await emulator.runCommand("moveBeginningOfLine");
         assertSelectionsEqual(activeTextEditor, new vscode.Selection(1, 1000, 1, 0));
       });
@@ -46,7 +46,7 @@ suite("moveBeginning/EndOfLine", () => {
 
       test("with mark", async () => {
         setEmptyCursors(activeTextEditor, [1, 0]);
-        emulator.setMarkCommand();
+        await emulator.runCommand("setMarkCommand");
         await emulator.runCommand("moveEndOfLine");
         assertSelectionsEqual(activeTextEditor, new vscode.Selection(1, 0, 1, 1000));
       });
@@ -82,7 +82,7 @@ suite("moveBeginning/EndOfLine", () => {
 
       test("with mark", async () => {
         setEmptyCursors(activeTextEditor, [1, 1000]);
-        emulator.setMarkCommand();
+        await emulator.runCommand("setMarkCommand");
         await emulator.runCommand("moveBeginningOfLine");
         assertSelectionsEqual(activeTextEditor, new vscode.Selection(1, 1000, 1, lastWrappedLineStart));
       });
@@ -97,7 +97,7 @@ suite("moveBeginning/EndOfLine", () => {
 
       test("with mark", async () => {
         setEmptyCursors(activeTextEditor, [1, 0]);
-        emulator.setMarkCommand();
+        await emulator.runCommand("setMarkCommand");
         await emulator.runCommand("moveEndOfLine");
         assertSelectionsEqual(activeTextEditor, new vscode.Selection(1, 0, 1, wrappedLineWidth));
       });
@@ -247,7 +247,7 @@ suite("beginning/endOfBuffer", () => {
 
     assert.notStrictEqual(activeTextEditor.selection.active.line, 101);
 
-    emulator.popMark();
+    await emulator.runCommand("popMark");
 
     assertCursorsEqual(activeTextEditor, [101, 1]);
   });
@@ -259,7 +259,7 @@ suite("beginning/endOfBuffer", () => {
 
     assert.notStrictEqual(activeTextEditor.selection.active.line, 0);
 
-    emulator.popMark();
+    await emulator.runCommand("popMark");
 
     assertCursorsEqual(activeTextEditor, [0, 1]);
   });

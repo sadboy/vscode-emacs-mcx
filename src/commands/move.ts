@@ -292,11 +292,11 @@ export class BackToIndentation extends EmacsCommand {
 export class BeginningOfBuffer extends EmacsCommand {
   public static readonly id = "beginningOfBuffer";
 
-  public execute(
+  public async execute(
     textEditor: TextEditor,
     isInMarkMode: boolean,
     prefixArgument: number | undefined
-  ): void | Thenable<void> {
+  ): Promise<void | Thenable<void>> {
     if (this.emacsController.inRectMarkMode) {
       const beginning = textEditor.document.positionAt(0);
       this.emacsController.moveRectActives(() => beginning);
@@ -304,20 +304,20 @@ export class BeginningOfBuffer extends EmacsCommand {
     }
 
     if (!isInMarkMode) {
-      this.emacsController.pushMark();
+      await this.emacsController.pushMark();
     }
-    return vscode.commands.executeCommand<void>(isInMarkMode ? "cursorTopSelect" : "cursorTop");
+    await vscode.commands.executeCommand<void>(isInMarkMode ? "cursorTopSelect" : "cursorTop");
   }
 }
 
 export class EndOfBuffer extends EmacsCommand {
   public static readonly id = "endOfBuffer";
 
-  public execute(
+  public async execute(
     textEditor: TextEditor,
     isInMarkMode: boolean,
     prefixArgument: number | undefined
-  ): void | Thenable<void> {
+  ): Promise<void | Thenable<void>> {
     if (this.emacsController.inRectMarkMode) {
       const end = textEditor.document.lineAt(textEditor.document.lineCount - 1).range.end;
       this.emacsController.moveRectActives(() => end);
@@ -325,9 +325,9 @@ export class EndOfBuffer extends EmacsCommand {
     }
 
     if (!isInMarkMode) {
-      this.emacsController.pushMark();
+      await this.emacsController.pushMark();
     }
-    return vscode.commands.executeCommand<void>(isInMarkMode ? "cursorBottomSelect" : "cursorBottom");
+    await vscode.commands.executeCommand<void>(isInMarkMode ? "cursorBottomSelect" : "cursorBottom");
   }
 }
 

@@ -80,10 +80,9 @@ export function activate(context: vscode.ExtensionContext): void {
         if (typeof onNoEmulator === "function") {
           return onNoEmulator(...args);
         }
-        return;
+      } else {
+        return callback(emulator, ...args);
       }
-
-      return callback(emulator, ...args);
     });
     context.subscriptions.push(disposable);
   }
@@ -141,22 +140,6 @@ export function activate(context: vscode.ExtensionContext): void {
 
   registerEmulatorCommand(`${COMMAND_NAME_PREFIX}.negativeArgument`, (emulator) => {
     return emulator.negativeArgument();
-  });
-
-  registerEmulatorCommand(`${COMMAND_NAME_PREFIX}.setMarkCommand`, (emulator) => {
-    emulator.setMarkCommand();
-  });
-
-  registerEmulatorCommand(`${COMMAND_NAME_PREFIX}.rectangleMarkMode`, (emulator) => {
-    emulator.rectangleMarkMode();
-  });
-
-  registerEmulatorCommand(`${COMMAND_NAME_PREFIX}.popMark`, (emulator) => {
-    emulator.popMark();
-  });
-
-  registerEmulatorCommand(`${COMMAND_NAME_PREFIX}.exchangePointAndMark`, (emulator) => {
-    emulator.exchangePointAndMark();
   });
 
   registerEmulatorCommand(`${COMMAND_NAME_PREFIX}.cancel`, (emulator) => {

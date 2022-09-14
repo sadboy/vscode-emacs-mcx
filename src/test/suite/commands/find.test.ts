@@ -37,7 +37,7 @@ suite("isearch", () => {
 
     assertCursorsEqual(activeTextEditor, [2, 0]);
 
-    emulator.popMark();
+    await emulator.runCommand("popMark");
 
     assertCursorsEqual(activeTextEditor, [1, 1]);
   });

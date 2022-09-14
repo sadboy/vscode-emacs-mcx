@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { Position, Range, TextDocument, TextEditor } from "vscode";
 import { EmacsCommand } from ".";
-import { IEmacsController } from "../emulator";
+import { EmacsEmulator } from "../emulator";
 import { AppendDirection, KillYanker } from "../kill-yank";
 import { Configuration } from "../configuration/configuration";
 import { WordCharacterClassifier, getMapForWordSeparators } from "vs/editor/common/controller/wordCharacterClassifier";
@@ -21,7 +21,7 @@ function getWordSeparators(): WordCharacterClassifier {
 export abstract class KillYankCommand extends EmacsCommand {
   protected killYanker: KillYanker;
 
-  public constructor(emacsController: IEmacsController) {
+  public constructor(emacsController: EmacsEmulator) {
     super(emacsController);
 
     this.killYanker = emacsController.killYanker;
@@ -200,7 +200,7 @@ export class Yank extends KillYankCommand {
   public async execute(
     textEditor: TextEditor, isInMarkMode: boolean, prefixArgument: number | undefined
   ): Promise<void> {
-    this.emacsController.pushMark();
+    await this.emacsController.pushMark();
     await this.killYanker.yank();
     this.emacsController.deactivateMark();
     revealPrimaryActive(textEditor);

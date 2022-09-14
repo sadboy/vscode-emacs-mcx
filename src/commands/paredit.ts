@@ -4,6 +4,8 @@ import { EmacsCommand } from ".";
 import { KillYankCommand } from "./kill";
 import { AppendDirection } from "../kill-yank";
 import { revealPrimaryActive } from "./helpers/reveal";
+import { EmacsEmulator } from "src/emulator";
+import assert from "assert";
 
 type PareditNavigatorFn = (ast: paredit.AST, idx: number) => number;
 
@@ -82,11 +84,15 @@ export class BackwardUpSexp extends PareditNavigatorCommand {
 
 export class MarkSexp extends EmacsCommand {
   public static readonly id = "paredit.markSexp";
-  private continuing = false;
+
+  private get continuing(): boolean {
+    return this.emacsController.lastCommand == MarkSexp.id;
+  }
 
   public async execute(
     textEditor: TextEditor, isInMarkMode: boolean, prefixArgument: number | undefined
   ): Promise<void> {
+    const controller: EmacsEmulator = this.emacsController;
     const arg = prefixArgument === undefined ? 1 : prefixArgument;
 
     const repeat = Math.abs(arg);
@@ -94,28 +100,19 @@ export class MarkSexp extends EmacsCommand {
 
     const doc = textEditor.document;
 
+    if (!this.continuing || controller.mark === undefined) {
+      controller.pushMark(undefined, false, true);
+    }
+    assert(controller.mark);
+
     const travelSexp = makeSexpTravelFunc(doc, navigatorFn);
-    const newSelections = textEditor.selections.map((selection) => {
+    const newCursor = textEditor.selections.map((selection) => {
       const newActivePosition = travelSexp(selection.active, repeat);
-      return new Selection(selection.anchor, newActivePosition);
+      return new Selection(newActivePosition, newActivePosition);
     });
 
-    textEditor.selections = newSelections;
-    if (newSelections.some((newSelection) => !newSelection.isEmpty)) {
-      this.emacsController.deactivateMark();
-    }
-
-    // TODO: Print "Mark set" message. With the current implementation, the message will disappear just after showing because MessageManager.onInterupt() is asynchronously called for setting the new selections and revealPrimaryActive() below.
-
-    this.emacsController.pushMark();
-
+    textEditor.selections = controller.mark.toAnchor(newCursor);
     revealPrimaryActive(textEditor);
-
-    this.continuing = true;
-  }
-
-  public onDidInterruptTextEditor(): void {
-    this.continuing = false;
   }
 }
 

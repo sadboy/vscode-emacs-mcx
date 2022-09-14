@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { TextEditor } from "vscode";
 import { EmacsCommand, IEmacsCommandInterrupted } from ".";
-import { IEmacsController, RectangleState } from "../emulator";
+import { EmacsEmulator, RectangleState } from "../emulator";
 import { getNonEmptySelections, makeSelectionsEmpty } from "./helpers/selection";
 import { convertSelectionToRectSelections } from "../rectangle";
 import { revealPrimaryActive } from "./helpers/reveal";
@@ -45,7 +45,7 @@ export class StartAcceptingRectCommand extends EmacsCommand implements IEmacsCom
 export abstract class RectangleKillYankCommand extends EmacsCommand {
   protected rectangleState: RectangleState;
 
-  public constructor(emacsController: IEmacsController) {
+  public constructor(emacsController: EmacsEmulator) {
     super(emacsController);
 
     this.rectangleState = emacsController.rectangleState;
@@ -255,7 +255,7 @@ export class StringRectangle extends EmacsCommand {
 
   private minibuffer: Minibuffer;
 
-  constructor(emacsController: IEmacsController) {
+  constructor(emacsController: EmacsEmulator) {
     super(emacsController);
     this.minibuffer = emacsController.miniBuffer;
   }
@@ -292,7 +292,7 @@ export class ReplaceKillRingToRectangle extends EmacsCommand {
   public static readonly id = "replaceKillRingToRectangle";
   private killring: KillRing | null;
 
-  public constructor(emacsController: IEmacsController) {
+  public constructor(emacsController: EmacsEmulator) {
     super(emacsController);
     this.killring = emacsController.killRing;
   }

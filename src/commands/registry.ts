@@ -9,9 +9,15 @@ import * as MoveCommands from "./move";
 import * as PareditCommands from "./paredit";
 import * as RectangleCommands from "./rectangle";
 import { RecenterTopBottom } from "./recenter";
-import { IEmacsController } from "src/emulator";
+import { EmacsEmulator } from "src/emulator";
+import { ExchangePointAndMarkCommand, PopMarkCommand, RectangleMarkModeCommand, SetMarkCommand } from "./mark";
 
-export const CommandRegister = new Map([
+const _CommandRegister = new Map([
+  SetMarkCommand,
+  PopMarkCommand,
+  ExchangePointAndMarkCommand,
+  RectangleMarkModeCommand,
+
   MoveCommands.ForwardChar,
   MoveCommands.BackwardChar,
   MoveCommands.NextLine,
@@ -72,20 +78,22 @@ export const CommandRegister = new Map([
   AddSelectionToPreviousFindMatch,
 ].map((item) => [item.id, item]));
 
+export const CommandRegister: ReadonlyMap<string, typeof EmacsCommand> = _CommandRegister;
+
 export class EmacsCommandRegistry {
   private commands: Map<string, EmacsCommand>;
-  private controller: IEmacsController;
+  private controller: EmacsEmulator;
 
-  constructor(controller: IEmacsController) {
+  constructor(controller: EmacsEmulator) {
     this.commands = new Map();
     this.controller = controller;
   }
 
   public get(commandName: string): EmacsCommand | undefined {
-    if (commandName in this.commands) {
+    if (this.commands.has(commandName)) {
       return this.commands.get(commandName);
     } else {
-      const cmdClass = CommandRegister.get(commandName);
+      const cmdClass = _CommandRegister.get(commandName);
       if (cmdClass === undefined) {
         return undefined;
       } else {

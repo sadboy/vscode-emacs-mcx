@@ -1,5 +1,5 @@
 import assert from "assert";
-import { Mark } from "../../../mark-ring";
+import { Marker } from "../../../mark-ring";
 import { Selection, TextEditor } from "vscode";
 import { EmacsEmulator } from "../../../emulator";
 import { KillRing } from "../../../kill-yank/kill-ring";
@@ -38,7 +38,7 @@ suite("paredit commands", () => {
     test("with mark-mode", async () => {
       setEmptyCursors(activeTextEditor, [0, 0]);
 
-      emulator.setMarkCommand();
+      await emulator.runCommand("setMarkCommand");
       await emulator.runCommand("paredit.forwardSexp");
 
       assertSelectionsEqual(activeTextEditor, new Selection(0, 0, 0, 5));
@@ -57,7 +57,7 @@ suite("paredit commands", () => {
     test("with mark-mode", async () => {
       setEmptyCursors(activeTextEditor, [0, 5]);
 
-      emulator.setMarkCommand();
+      await emulator.runCommand("setMarkCommand");
       await emulator.runCommand("paredit.backwardSexp");
 
       assertSelectionsEqual(activeTextEditor, new Selection(0, 5, 0, 0));
@@ -310,13 +310,13 @@ suite("paredit.mark-sexp", () => {
 
     emulator.deactivateMark();
     activeTextEditor.selection = new Selection(0, 0, 0, 0);
-    emulator.popMark();
+    await emulator.runCommand("popMark");
     assertCursorsEqual(activeTextEditor, [7, 1]);
   });
 
   test("mark inner parentheses continuously", async () => {
     setEmptyCursors(activeTextEditor, [1, 0]);
-    emulator.pushMark(Mark.fromCursor(activeTextEditor.selections));
+    emulator.pushMark(Marker.fromCursor(activeTextEditor.selections));
 
     await emulator.runCommand("paredit.markSexp");
 
@@ -331,15 +331,15 @@ suite("paredit.mark-sexp", () => {
     emulator.deactivateMark();
     activeTextEditor.selection = new Selection(0, 0, 0, 0);
 
-    emulator.popMark();
+    await emulator.runCommand("popMark");
     assertCursorsEqual(activeTextEditor, [6, 3]);
-    emulator.popMark();
+    await emulator.runCommand("popMark");
     assertCursorsEqual(activeTextEditor, [1, 0]);
   });
 
   test("mark inner parentheses with a positive prefix argument", async () => {
     setEmptyCursors(activeTextEditor, [1, 0]);
-    emulator.pushMark(Mark.fromCursor(activeTextEditor.selections));
+    emulator.pushMark(Marker.fromCursor(activeTextEditor.selections));
 
     await emulator.universalArgument();
     await emulator.subsequentArgumentDigit(2);
@@ -351,15 +351,15 @@ suite("paredit.mark-sexp", () => {
     emulator.deactivateMark();
     activeTextEditor.selection = new Selection(0, 0, 0, 0);
 
-    emulator.popMark();
+    await emulator.runCommand("popMark");
     assertCursorsEqual(activeTextEditor, [6, 3]);
-    emulator.popMark();
+    await emulator.runCommand("popMark");
     assertCursorsEqual(activeTextEditor, [1, 0]);
   });
 
   test("mark inner parentheses with a negative prefix argument", async () => {
     setEmptyCursors(activeTextEditor, [6, 3]);
-    emulator.pushMark(Mark.fromCursor(activeTextEditor.selections));
+    emulator.pushMark(Marker.fromCursor(activeTextEditor.selections));
 
     await emulator.negativeArgument();
     await emulator.subsequentArgumentDigit(2);
@@ -371,9 +371,9 @@ suite("paredit.mark-sexp", () => {
     emulator.deactivateMark();
     activeTextEditor.selection = new Selection(0, 0, 0, 0);
 
-    emulator.popMark();
+    await emulator.runCommand("popMark");
     assertCursorsEqual(activeTextEditor, [1, 2]);
-    emulator.popMark();
+    await emulator.runCommand("popMark");
     assertCursorsEqual(activeTextEditor, [6, 3]);
   });
 });
@@ -393,7 +393,7 @@ suite("paredit commands with a long text that requires revealing", () => {
 
   test("forwardSexp: the selection is revealed at the active cursor", async () => {
     setEmptyCursors(activeTextEditor, [0, 0]);
-    emulator.setMarkCommand();
+    await emulator.runCommand("setMarkCommand");
 
     await emulator.runCommand("paredit.forwardSexp");
 
@@ -406,7 +406,7 @@ suite("paredit commands with a long text that requires revealing", () => {
 
   test("backwardSexp: the selection is revealed at the active cursor", async () => {
     setEmptyCursors(activeTextEditor, [1000, 1]);
-    emulator.setMarkCommand();
+    await emulator.runCommand("setMarkCommand");
 
     await emulator.runCommand("paredit.backwardSexp");
 

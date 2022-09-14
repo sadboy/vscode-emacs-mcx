@@ -1,18 +1,19 @@
+import assert from "assert";
 import { Position, Selection } from "vscode";
 
-export class Mark {
+export class Marker {
   private positions: readonly Position[];
 
   constructor(positions: readonly Position[]) {
     this.positions = positions;
   }
 
-  public static fromAnchor(selections: readonly Selection[]): Mark {
-    return new Mark(selections.map((selection) => selection.anchor));
+  public static fromAnchor(selections: readonly Selection[]): Marker {
+    return new Marker(selections.map((selection) => selection.anchor));
   }
 
-  public static fromCursor(selections: readonly Selection[]): Mark {
-    return new Mark(selections.map((selection) => selection.active));
+  public static fromCursor(selections: readonly Selection[]): Marker {
+    return new Marker(selections.map((selection) => selection.active));
   }
 
   public toCursor(selections: readonly Selection[] | undefined = undefined): Selection[] {
@@ -41,7 +42,7 @@ export class Mark {
     });
   }
 
-  public isEqual(other: Mark): boolean {
+  public isEqual(other: Marker): boolean {
     if (other.positions.length !== this.positions.length) {
       return false;
     }
@@ -65,7 +66,7 @@ export class Mark {
 
 export class MarkRing {
   private maxNum = 16;
-  private ring: Array<Mark>;
+  private ring: Array<Marker>;
   private pointer: number | null;
 
   constructor(maxNum?: number) {
@@ -77,12 +78,12 @@ export class MarkRing {
     this.ring = [];
   }
 
-  public push(mark: Mark, replace = false, force = false): void {
+  public push(mark: Marker, replace = false, force = false): void {
     const top = this.getTop();
 
     if (replace || top === undefined) {
       this.ring[0] = mark;
-    } else if (force || top.isEqual(mark)) {
+    } else if (force || !top.isEqual(mark)) {
       this.ring.unshift(mark);
       if (this.ring.length > this.maxNum) {
         this.ring.pop();
@@ -91,18 +92,22 @@ export class MarkRing {
     this.pointer = 0;
   }
 
-  public getTop(): Mark | undefined {
-    if (this.pointer == null || this.ring.length === 0) {
+  public getTop(): Marker | undefined {
+    if (this.ring.length === 0) {
       return undefined;
     }
+
+    assert(typeof this.pointer === 'number');
 
     return this.ring[this.pointer];
   }
 
-  public pop(): Mark | undefined {
-    if (this.pointer == null || this.ring.length === 0) {
+  public pop(): Marker | undefined {
+    if (this.ring.length === 0) {
       return undefined;
     }
+
+    assert(typeof this.pointer === 'number');
 
     const ret = this.ring[this.pointer];
 

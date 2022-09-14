@@ -83,7 +83,7 @@ suite("newLine", () => {
           test("it cancels mark-mode and does NOT remove the selected text", async () => {
             // Set up mark-mode
             setEmptyCursors(activeTextEditor, [0, 0]);
-            emulator.setMarkCommand();
+            await emulator.runCommand("setMarkCommand");
             await emulator.runCommand("forwardChar");
             assert.ok(activeTextEditor.selections.every((selection) => !selection.isEmpty));
 
@@ -96,7 +96,7 @@ suite("newLine", () => {
 
             // Then, next mark-mode works
             setEmptyCursors(activeTextEditor, [0, 0]);
-            emulator.setMarkCommand();
+            await emulator.runCommand("setMarkCommand");
             await emulator.runCommand("forwardChar");
             assert.ok(activeTextEditor.selections.every((selection) => !selection.isEmpty));
           });

@@ -1,11 +1,11 @@
 import * as vscode from "vscode";
 import { TextEditor } from "vscode";
 import { EmacsCommand } from ".";
-import { IEmacsController, SearchState } from "../emulator";
+import { EmacsEmulator, SearchState } from "../emulator";
 import { MessageManager } from "../message";
 import { revealPrimaryActive } from "./helpers/reveal";
 import { WorkspaceConfigCache } from "../workspace-configuration";
-import { Mark } from "../mark-ring";
+import { Marker } from "../mark-ring";
 
 
 interface FindArgs {
@@ -21,7 +21,7 @@ interface FindArgs {
 abstract class IsearchCommand extends EmacsCommand {
   protected searchState: SearchState;
 
-  public constructor(emacsController: IEmacsController) {
+  public constructor(emacsController: EmacsEmulator) {
     super(emacsController);
 
     this.searchState = emacsController.searchState;
@@ -152,7 +152,7 @@ export class IsearchExit extends IsearchCommand {
     textEditor: TextEditor, isInMarkMode: boolean, prefixArgument: number | undefined, ...args: any[]
   ): Promise<void> {
     if (this.searchState.startSelections) {
-      this.emacsController.pushMark(Mark.fromAnchor(this.searchState.startSelections), true);
+      await this.emacsController.pushMark(Marker.fromAnchor(this.searchState.startSelections), true);
       MessageManager.showMessage("Mark saved where search started");
     }
     await vscode.commands

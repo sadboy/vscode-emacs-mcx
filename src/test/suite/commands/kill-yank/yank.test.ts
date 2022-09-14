@@ -50,10 +50,10 @@ import { assertCursorsEqual, assertTextEqual, cleanUpWorkspace, setEmptyCursors,
 
           assertCursorsEqual(activeTextEditor, [1, 11]);
 
-          emulator.popMark();
+          await emulator.runCommand("popMark");
           assertCursorsEqual(activeTextEditor, [1, 0]);
 
-          emulator.popMark();
+          await emulator.runCommand("popMark");
           assertCursorsEqual(activeTextEditor, [0, 0]);
         });
       });
