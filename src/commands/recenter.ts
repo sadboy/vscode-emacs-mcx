@@ -9,7 +9,7 @@ enum RecenterPosition {
 }
 
 export class RecenterTopBottom extends EmacsCommand implements IEmacsCommandInterrupted {
-  public readonly id = "recenterTopBottom";
+  public static readonly id = "recenterTopBottom";
 
   private recenterPosition: RecenterPosition = RecenterPosition.Middle;
 

@@ -21,10 +21,10 @@ function getWordSeparators(): WordCharacterClassifier {
 export abstract class KillYankCommand extends EmacsCommand {
   protected killYanker: KillYanker;
 
-  public constructor(emacsController: IEmacsController, killYanker: KillYanker) {
+  public constructor(emacsController: IEmacsController) {
     super(emacsController);
 
-    this.killYanker = killYanker;
+    this.killYanker = emacsController.killYanker;
   }
 }
 
@@ -45,7 +45,7 @@ function findNextKillWordRange(doc: TextDocument, position: Position, repeat = 1
 }
 
 export class KillWord extends KillYankCommand {
-  public readonly id = "killWord";
+  public static readonly id = "killWord";
 
   public async execute(
     textEditor: TextEditor, isInMarkMode: boolean, prefixArgument: number | undefined
@@ -81,7 +81,7 @@ function findPreviousKillWordRange(doc: TextDocument, position: Position, repeat
 }
 
 export class BackwardKillWord extends KillYankCommand {
-  public readonly id = "backwardKillWord";
+  public static readonly id = "backwardKillWord";
 
   public async execute(
     textEditor: TextEditor, isInMarkMode: boolean, prefixArgument: number | undefined
@@ -100,7 +100,7 @@ export class BackwardKillWord extends KillYankCommand {
 }
 
 export class KillLine extends KillYankCommand {
-  public readonly id = "killLine";
+  public static readonly id = "killLine";
 
   public async execute(
     textEditor: TextEditor, isInMarkMode: boolean, prefixArgument: number | undefined
@@ -136,7 +136,7 @@ export class KillLine extends KillYankCommand {
 }
 
 export class KillWholeLine extends KillYankCommand {
-  public readonly id = "killWholeLine";
+  public static readonly id = "killWholeLine";
 
   public async execute(
     textEditor: TextEditor, isInMarkMode: boolean, prefixArgument: number | undefined
@@ -153,7 +153,7 @@ export class KillWholeLine extends KillYankCommand {
 }
 
 export class KillRegion extends KillYankCommand {
-  public readonly id = "killRegion";
+  public static readonly id = "killRegion";
 
   public async execute(
     textEditor: TextEditor, isInMarkMode: boolean, prefixArgument: number | undefined
@@ -180,7 +180,7 @@ export class KillRegion extends KillYankCommand {
 
 // TODO: Rename to kill-ring-save (original emacs command name)
 export class CopyRegion extends KillYankCommand {
-  public readonly id = "copyRegion";
+  public static readonly id = "copyRegion";
 
   public async execute(
     textEditor: TextEditor, isInMarkMode: boolean, prefixArgument: number | undefined
@@ -195,7 +195,7 @@ export class CopyRegion extends KillYankCommand {
 }
 
 export class Yank extends KillYankCommand {
-  public readonly id = "yank";
+  public static readonly id = "yank";
 
   public async execute(
     textEditor: TextEditor, isInMarkMode: boolean, prefixArgument: number | undefined
@@ -208,7 +208,7 @@ export class Yank extends KillYankCommand {
 }
 
 export class YankPop extends KillYankCommand {
-  public readonly id = "yankPop";
+  public static readonly id = "yank-pop";
 
   public async execute(
     textEditor: TextEditor, isInMarkMode: boolean, prefixArgument: number | undefined

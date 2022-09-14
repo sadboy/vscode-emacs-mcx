@@ -1,5 +1,5 @@
 import assert from "assert";
-import { Mark } from "src/mark-ring";
+import { Mark } from "../../../mark-ring";
 import { Selection, TextEditor } from "vscode";
 import { EmacsEmulator } from "../../../emulator";
 import { KillRing } from "../../../kill-yank/kill-ring";

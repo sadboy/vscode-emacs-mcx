@@ -61,27 +61,27 @@ abstract class PareditNavigatorCommand extends EmacsCommand {
 }
 
 export class ForwardSexp extends PareditNavigatorCommand {
-  public readonly id = "paredit.forwardSexp";
+  public static readonly id = "paredit.forwardSexp";
   public readonly pareditNavigatorFn = paredit.navigator.forwardSexp;
 }
 
 export class BackwardSexp extends PareditNavigatorCommand {
-  public readonly id = "paredit.backwardSexp";
+  public static readonly id = "paredit.backwardSexp";
   public readonly pareditNavigatorFn = paredit.navigator.backwardSexp;
 }
 
 export class ForwardDownSexp extends PareditNavigatorCommand {
-  public readonly id = "paredit.forwardDownSexp";
+  public static readonly id = "paredit.forwardDownSexp";
   public readonly pareditNavigatorFn = paredit.navigator.forwardDownSexp;
 }
 
 export class BackwardUpSexp extends PareditNavigatorCommand {
-  public readonly id = "paredit.backwardUpSexp";
+  public static readonly id = "paredit.backwardUpSexp";
   public readonly pareditNavigatorFn = paredit.navigator.backwardUpSexp;
 }
 
 export class MarkSexp extends EmacsCommand {
-  public readonly id = "paredit.markSexp";
+  public static readonly id = "paredit.markSexp";
   private continuing = false;
 
   public async execute(
@@ -120,7 +120,7 @@ export class MarkSexp extends EmacsCommand {
 }
 
 export class KillSexp extends KillYankCommand {
-  public readonly id = "paredit.killSexp";
+  public static readonly id = "paredit.killSexp";
 
   public async execute(
     textEditor: TextEditor,
@@ -147,7 +147,7 @@ export class KillSexp extends KillYankCommand {
 }
 
 export class BackwardKillSexp extends KillYankCommand {
-  public readonly id = "paredit.backwardKillSexp";
+  public static readonly id = "paredit.backwardKillSexp";
 
   public async execute(
     textEditor: TextEditor,

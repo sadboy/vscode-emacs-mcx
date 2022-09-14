@@ -7,7 +7,7 @@ function hasNonEmptySelection(textEditor: TextEditor): boolean {
 }
 
 export class TransformToUppercase extends EmacsCommand {
-  public readonly id = "transformToUppercase";
+  public static readonly id = "transformToUppercase";
 
   public async execute(textEditor: TextEditor, isInMarkMode: boolean, prefixArgument: number | undefined) {
     if (!hasNonEmptySelection(textEditor)) {
@@ -18,7 +18,7 @@ export class TransformToUppercase extends EmacsCommand {
 }
 
 export class TransformToLowercase extends EmacsCommand {
-  public readonly id = "transformToLowercase";
+  public static readonly id = "transformToLowercase";
 
   public async execute(textEditor: TextEditor, isInMarkMode: boolean, prefixArgument: number | undefined) {
     if (!hasNonEmptySelection(textEditor)) {
@@ -29,7 +29,7 @@ export class TransformToLowercase extends EmacsCommand {
 }
 
 export class TransformToTitlecase extends EmacsCommand {
-  public readonly id = "transformToTitlecase";
+  public static readonly id = "transformToTitlecase";
 
   public async execute(textEditor: TextEditor, isInMarkMode: boolean, prefixArgument: number | undefined) {
     if (!hasNonEmptySelection(textEditor)) {

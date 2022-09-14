@@ -3,7 +3,7 @@ import { TextEditor } from "vscode";
 import { EmacsCommand } from ".";
 
 export class DeleteBlankLines extends EmacsCommand {
-  public readonly id = "deleteBlankLines";
+  public static readonly id = "deleteBlankLines";
 
   public async execute(textEditor: TextEditor, isInMarkMode: boolean, prefixArgument: number | undefined) {
     const document = textEditor.document;

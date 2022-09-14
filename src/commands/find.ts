@@ -1,15 +1,12 @@
 import * as vscode from "vscode";
 import { TextEditor } from "vscode";
 import { EmacsCommand } from ".";
-import { IEmacsController } from "../emulator";
+import { IEmacsController, SearchState } from "../emulator";
 import { MessageManager } from "../message";
 import { revealPrimaryActive } from "./helpers/reveal";
 import { WorkspaceConfigCache } from "../workspace-configuration";
 import { Mark } from "../mark-ring";
 
-export interface SearchState {
-  startSelections: readonly vscode.Selection[] | undefined;
-}
 
 interface FindArgs {
   // See https://github.com/microsoft/vscode/blob/1.64.0/src/vs/editor/contrib/find/browser/findController.ts#L588-L599
@@ -24,10 +21,10 @@ interface FindArgs {
 abstract class IsearchCommand extends EmacsCommand {
   protected searchState: SearchState;
 
-  public constructor(emacsController: IEmacsController, searchState: SearchState) {
+  public constructor(emacsController: IEmacsController) {
     super(emacsController);
 
-    this.searchState = searchState;
+    this.searchState = emacsController.searchState;
   }
 
   protected openFindWidget(opts: { isRegex: boolean; replaceString?: string }): Thenable<void> {
@@ -62,7 +59,7 @@ abstract class IsearchCommand extends EmacsCommand {
 }
 
 export class IsearchForward extends IsearchCommand {
-  public readonly id = "isearchForward";
+  public static readonly id = "isearchForward";
 
   public execute(textEditor: TextEditor, isInMarkMode: boolean, prefixArgument: number | undefined): Thenable<void> {
     this.searchState.startSelections = textEditor.selections;
@@ -74,7 +71,7 @@ export class IsearchForward extends IsearchCommand {
 }
 
 export class IsearchBackward extends IsearchCommand {
-  public readonly id = "isearchBackward";
+  public static readonly id = "isearchBackward";
 
   public execute(textEditor: TextEditor, isInMarkMode: boolean, prefixArgument: number | undefined): Thenable<void> {
     this.searchState.startSelections = textEditor.selections;
@@ -85,7 +82,7 @@ export class IsearchBackward extends IsearchCommand {
 }
 
 export class IsearchForwardRegexp extends IsearchCommand {
-  public readonly id = "isearchForwardRegexp";
+  public static readonly id = "isearchForwardRegexp";
 
   public execute(textEditor: TextEditor, isInMarkMode: boolean, prefixArgument: number | undefined): Thenable<void> {
     this.searchState.startSelections = textEditor.selections;
@@ -96,7 +93,7 @@ export class IsearchForwardRegexp extends IsearchCommand {
 }
 
 export class IsearchBackwardRegexp extends IsearchCommand {
-  public readonly id = "isearchBackwardRegexp";
+  public static readonly id = "isearchBackwardRegexp";
 
   public execute(textEditor: TextEditor, isInMarkMode: boolean, prefixArgument: number | undefined): Thenable<void> {
     this.searchState.startSelections = textEditor.selections;
@@ -107,7 +104,7 @@ export class IsearchBackwardRegexp extends IsearchCommand {
 }
 
 export class QueryReplace extends IsearchCommand {
-  public readonly id = "queryReplace";
+  public static readonly id = "queryReplace";
 
   public execute(textEditor: TextEditor, isInMarkMode: boolean, prefixArgument: number | undefined): Thenable<void> {
     this.searchState.startSelections = textEditor.selections;
@@ -119,7 +116,7 @@ export class QueryReplace extends IsearchCommand {
 }
 
 export class QueryReplaceRegexp extends IsearchCommand {
-  public readonly id = "queryReplaceRegexp";
+  public static readonly id = "queryReplaceRegexp";
 
   public execute(textEditor: TextEditor, isInMarkMode: boolean, prefixArgument: number | undefined): Thenable<void> {
     this.searchState.startSelections = textEditor.selections;
@@ -133,7 +130,7 @@ export class QueryReplaceRegexp extends IsearchCommand {
  * C-g
  */
 export class IsearchAbort extends IsearchCommand {
-  public readonly id = "isearchAbort";
+  public static readonly id = "isearchAbort";
 
   public execute(textEditor: TextEditor, isInMarkMode: boolean, prefixArgument: number | undefined): Thenable<void> {
     if (this.searchState.startSelections) {
@@ -149,15 +146,24 @@ export class IsearchAbort extends IsearchCommand {
  * Enter, etc
  */
 export class IsearchExit extends IsearchCommand {
-  public readonly id = "isearchExit";
+  public static readonly id = "isearchExit";
 
-  public execute(textEditor: TextEditor, isInMarkMode: boolean, prefixArgument: number | undefined): Thenable<void> {
+  public async execute(
+    textEditor: TextEditor, isInMarkMode: boolean, prefixArgument: number | undefined, ...args: any[]
+  ): Promise<void> {
     if (this.searchState.startSelections) {
       this.emacsController.pushMark(Mark.fromAnchor(this.searchState.startSelections), true);
       MessageManager.showMessage("Mark saved where search started");
     }
-    return vscode.commands
-      .executeCommand("closeFindWidget")
-      .then(() => vscode.commands.executeCommand("cancelSelection"));
+    await vscode.commands
+      .executeCommand("closeFindWidget");
+    await vscode.commands.executeCommand("cancelSelection");
+
+    if (args.length > 0) {
+      const arg = args[0];
+      if (typeof arg === "object") {
+        await vscode.commands.executeCommand(arg.then);
+      }
+    }
   }
 }

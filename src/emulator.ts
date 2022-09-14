@@ -1,16 +1,6 @@
 import * as vscode from "vscode";
 import { Selection, TextEditor } from "vscode";
 import { instanceOfIEmacsCommandInterrupted } from "./commands";
-import { AddSelectionToNextFindMatch, AddSelectionToPreviousFindMatch } from "./commands/add-selection-to-find-match";
-import * as CaseCommands from "./commands/case";
-import { DeleteBlankLines } from "./commands/delete-blank-lines";
-import * as EditCommands from "./commands/edit";
-import * as FindCommands from "./commands/find";
-import * as KillCommands from "./commands/kill";
-import * as MoveCommands from "./commands/move";
-import * as PareditCommands from "./commands/paredit";
-import * as RectangleCommands from "./commands/rectangle";
-import { RecenterTopBottom } from "./commands/recenter";
 import { EmacsCommandRegistry } from "./commands/registry";
 import { EditorIdentity } from "./editorIdentity";
 import { KillYanker } from "./kill-yank";
@@ -24,6 +14,15 @@ import { convertSelectionToRectSelections } from "./rectangle";
 import { InputBoxMinibuffer, Minibuffer } from "./minibuffer";
 import { revealPrimaryActive } from "./commands/helpers/reveal";
 
+export interface SearchState {
+  startSelections: readonly vscode.Selection[] | undefined;
+}
+
+type KilledRectangle = string[];
+export interface RectangleState {
+  latestKilledRectangle: KilledRectangle; // multi-cursor is not supported
+}
+
 export interface IEmacsController {
   runCommand(commandName: string): void | Thenable<unknown>;
 
@@ -31,8 +30,14 @@ export interface IEmacsController {
   deactivateMark(): void;
   pushMark(mark?: Mark, nomsg?: boolean, activate?: boolean): void;
 
+  readonly miniBuffer: Minibuffer;
+  readonly killRing: KillRing | null;
+  readonly killYanker: KillYanker;
   readonly inRectMarkMode: boolean;
   readonly nativeSelections: readonly vscode.Selection[];
+  readonly searchState: SearchState;
+  readonly rectangleState: RectangleState;
+
   moveRectActives: (navigateFn: (currentActives: vscode.Position) => vscode.Position) => void;
 
   registerDisposable: (disposable: vscode.Disposable) => void;
@@ -90,7 +95,11 @@ export class EmacsEmulator implements IEmacsController, vscode.Disposable {
     this.applyNativeSelectionsAsRect();
   }
 
-  private killYanker: KillYanker;
+  public readonly miniBuffer: Minibuffer;
+  public readonly killRing: KillRing | null;
+  public readonly killYanker: KillYanker;
+  public readonly searchState: SearchState;
+  public readonly rectangleState: RectangleState;
   private prefixArgumentHandler: PrefixArgumentHandler;
 
   private disposables: vscode.Disposable[];
@@ -116,81 +125,16 @@ export class EmacsEmulator implements IEmacsController, vscode.Disposable {
     vscode.workspace.onDidChangeTextDocument(this.onDidChangeTextDocument, this, this.disposables);
     vscode.window.onDidChangeTextEditorSelection(this.onDidChangeTextEditorSelection, this, this.disposables);
 
-    this.commandRegistry = new EmacsCommandRegistry();
+    this.commandRegistry = new EmacsCommandRegistry(this);
     this.afterCommand = this.afterCommand.bind(this);
 
-    this.commandRegistry.register(new MoveCommands.ForwardChar(this));
-    this.commandRegistry.register(new MoveCommands.BackwardChar(this));
-    this.commandRegistry.register(new MoveCommands.NextLine(this));
-    this.commandRegistry.register(new MoveCommands.PreviousLine(this));
-    this.commandRegistry.register(new MoveCommands.MoveBeginningOfLine(this));
-    this.commandRegistry.register(new MoveCommands.MoveEndOfLine(this));
-    this.commandRegistry.register(new MoveCommands.ForwardWord(this));
-    this.commandRegistry.register(new MoveCommands.BackwardWord(this));
-    this.commandRegistry.register(new MoveCommands.BackToIndentation(this));
-    this.commandRegistry.register(new MoveCommands.BeginningOfBuffer(this));
-    this.commandRegistry.register(new MoveCommands.EndOfBuffer(this));
-    this.commandRegistry.register(new MoveCommands.ScrollUpCommand(this));
-    this.commandRegistry.register(new MoveCommands.ScrollDownCommand(this));
-    this.commandRegistry.register(new MoveCommands.ForwardParagraph(this));
-    this.commandRegistry.register(new MoveCommands.BackwardParagraph(this));
-    this.commandRegistry.register(new EditCommands.DeleteBackwardChar(this));
-    this.commandRegistry.register(new EditCommands.DeleteForwardChar(this));
-    this.commandRegistry.register(new EditCommands.NewLine(this));
-    this.commandRegistry.register(new DeleteBlankLines(this));
-    this.commandRegistry.register(new RecenterTopBottom(this));
+    this.miniBuffer = minibuffer;
+    this.killRing = killRing;
+    this.searchState = { startSelections: undefined, };
+    this.killYanker = new KillYanker(textEditor, killRing, minibuffer);
+    this.registerDisposable(this.killYanker);
 
-    const searchState: FindCommands.SearchState = {
-      startSelections: undefined,
-    };
-    this.commandRegistry.register(new FindCommands.IsearchForward(this, searchState));
-    this.commandRegistry.register(new FindCommands.IsearchBackward(this, searchState));
-    this.commandRegistry.register(new FindCommands.IsearchForwardRegexp(this, searchState));
-    this.commandRegistry.register(new FindCommands.IsearchBackwardRegexp(this, searchState));
-    this.commandRegistry.register(new FindCommands.QueryReplace(this, searchState));
-    this.commandRegistry.register(new FindCommands.QueryReplaceRegexp(this, searchState));
-    this.commandRegistry.register(new FindCommands.IsearchAbort(this, searchState));
-    this.commandRegistry.register(new FindCommands.IsearchExit(this, searchState));
-
-    const killYanker = new KillYanker(textEditor, killRing, minibuffer);
-    this.commandRegistry.register(new KillCommands.KillWord(this, killYanker));
-    this.commandRegistry.register(new KillCommands.BackwardKillWord(this, killYanker));
-    this.commandRegistry.register(new KillCommands.KillLine(this, killYanker));
-    this.commandRegistry.register(new KillCommands.KillWholeLine(this, killYanker));
-    this.commandRegistry.register(new KillCommands.KillRegion(this, killYanker));
-    this.commandRegistry.register(new KillCommands.CopyRegion(this, killYanker));
-    this.commandRegistry.register(new KillCommands.Yank(this, killYanker));
-    this.commandRegistry.register(new KillCommands.YankPop(this, killYanker));
-    this.killYanker = killYanker; // TODO: To be removed
-    this.registerDisposable(killYanker);
-
-    const rectangleState: RectangleCommands.RectangleState = {
-      latestKilledRectangle: [],
-    };
-    this.commandRegistry.register(new RectangleCommands.StartAcceptingRectCommand(this));
-    this.commandRegistry.register(new RectangleCommands.KillRectangle(this, rectangleState));
-    this.commandRegistry.register(new RectangleCommands.CopyRectangleAsKill(this, rectangleState));
-    this.commandRegistry.register(new RectangleCommands.DeleteRectangle(this, rectangleState));
-    this.commandRegistry.register(new RectangleCommands.YankRectangle(this, rectangleState));
-    this.commandRegistry.register(new RectangleCommands.OpenRectangle(this));
-    this.commandRegistry.register(new RectangleCommands.ClearRectangle(this));
-    this.commandRegistry.register(new RectangleCommands.StringRectangle(this, minibuffer));
-    this.commandRegistry.register(new RectangleCommands.ReplaceKillRingToRectangle(this, killRing));
-
-    this.commandRegistry.register(new PareditCommands.ForwardSexp(this));
-    this.commandRegistry.register(new PareditCommands.BackwardSexp(this));
-    this.commandRegistry.register(new PareditCommands.ForwardDownSexp(this));
-    this.commandRegistry.register(new PareditCommands.BackwardUpSexp(this));
-    this.commandRegistry.register(new PareditCommands.MarkSexp(this));
-    this.commandRegistry.register(new PareditCommands.KillSexp(this, killYanker));
-    this.commandRegistry.register(new PareditCommands.BackwardKillSexp(this, killYanker));
-
-    this.commandRegistry.register(new AddSelectionToNextFindMatch(this));
-    this.commandRegistry.register(new AddSelectionToPreviousFindMatch(this));
-
-    this.commandRegistry.register(new CaseCommands.TransformToUppercase(this));
-    this.commandRegistry.register(new CaseCommands.TransformToLowercase(this));
-    this.commandRegistry.register(new CaseCommands.TransformToTitlecase(this));
+    this.rectangleState = { latestKilledRectangle: [], };
   }
 
   public setTextEditor(textEditor: TextEditor): void {
@@ -344,7 +288,7 @@ export class EmacsEmulator implements IEmacsController, vscode.Disposable {
     return vscode.commands.executeCommand("setContext", "emacs-mcx.acceptingArgument", newState);
   }
 
-  public runCommand(commandName: string): Thenable<unknown> | void {
+  public runCommand(commandName: string, ...args: any[]): Thenable<unknown> | void {
     const command = this.commandRegistry.get(commandName);
 
     if (command === undefined) {
@@ -353,7 +297,7 @@ export class EmacsEmulator implements IEmacsController, vscode.Disposable {
 
     const prefixArgument = this.prefixArgumentHandler.getPrefixArgument();
 
-    const ret = command.run(this.textEditor, this.isMarkActive, prefixArgument);
+    const ret = command.run(this.textEditor, this.isMarkActive, prefixArgument, ...args);
     this.afterCommand();
     return ret;
   }

@@ -28,7 +28,7 @@ export const moveCommandIds = [
 ];
 
 export class ForwardChar extends EmacsCommand {
-  public readonly id = "forwardChar";
+  public static readonly id = "forwardChar";
 
   public execute(
     textEditor: TextEditor,
@@ -58,7 +58,7 @@ export class ForwardChar extends EmacsCommand {
 }
 
 export class BackwardChar extends EmacsCommand {
-  public readonly id = "backwardChar";
+  public static readonly id = "backwardChar";
 
   public execute(
     textEditor: TextEditor,
@@ -90,7 +90,7 @@ export class BackwardChar extends EmacsCommand {
 }
 
 export class NextLine extends EmacsCommand {
-  public readonly id = "nextLine";
+  public static readonly id = "nextLine";
 
   public execute(
     textEditor: TextEditor,
@@ -117,7 +117,7 @@ export class NextLine extends EmacsCommand {
 }
 
 export class PreviousLine extends EmacsCommand {
-  public readonly id = "previousLine";
+  public static readonly id = "previousLine";
 
   public execute(
     textEditor: TextEditor,
@@ -143,7 +143,7 @@ export class PreviousLine extends EmacsCommand {
 }
 
 export class MoveBeginningOfLine extends EmacsCommand {
-  public readonly id = "moveBeginningOfLine";
+  public static readonly id = "moveBeginningOfLine";
 
   public execute(
     textEditor: TextEditor,
@@ -181,7 +181,7 @@ export class MoveBeginningOfLine extends EmacsCommand {
 }
 
 export class MoveEndOfLine extends EmacsCommand {
-  public readonly id = "moveEndOfLine";
+  public static readonly id = "moveEndOfLine";
 
   public execute(
     textEditor: TextEditor,
@@ -219,7 +219,7 @@ export class MoveEndOfLine extends EmacsCommand {
 }
 
 export class ForwardWord extends EmacsCommand {
-  public readonly id = "forwardWord";
+  public static readonly id = "forwardWord";
 
   public execute(
     textEditor: TextEditor,
@@ -239,7 +239,7 @@ export class ForwardWord extends EmacsCommand {
 }
 
 export class BackwardWord extends EmacsCommand {
-  public readonly id = "backwardWord";
+  public static readonly id = "backwardWord";
 
   public execute(
     textEditor: TextEditor,
@@ -259,7 +259,7 @@ export class BackwardWord extends EmacsCommand {
 }
 
 export class BackToIndentation extends EmacsCommand {
-  public readonly id = "backToIndentation";
+  public static readonly id = "backToIndentation";
 
   public execute(
     textEditor: TextEditor,
@@ -290,7 +290,7 @@ export class BackToIndentation extends EmacsCommand {
 }
 
 export class BeginningOfBuffer extends EmacsCommand {
-  public readonly id = "beginningOfBuffer";
+  public static readonly id = "beginningOfBuffer";
 
   public execute(
     textEditor: TextEditor,
@@ -311,7 +311,7 @@ export class BeginningOfBuffer extends EmacsCommand {
 }
 
 export class EndOfBuffer extends EmacsCommand {
-  public readonly id = "endOfBuffer";
+  public static readonly id = "endOfBuffer";
 
   public execute(
     textEditor: TextEditor,
@@ -332,7 +332,7 @@ export class EndOfBuffer extends EmacsCommand {
 }
 
 export class ScrollUpCommand extends EmacsCommand {
-  public readonly id = "scrollUpCommand";
+  public static readonly id = "scrollUpCommand";
 
   public execute(
     textEditor: TextEditor,
@@ -392,7 +392,7 @@ export class ScrollUpCommand extends EmacsCommand {
 }
 
 export class ScrollDownCommand extends EmacsCommand {
-  public readonly id = "scrollDownCommand";
+  public static readonly id = "scrollDownCommand";
 
   public execute(
     textEditor: TextEditor,
@@ -451,7 +451,7 @@ export class ScrollDownCommand extends EmacsCommand {
 }
 
 export class ForwardParagraph extends EmacsCommand {
-  public readonly id = "forwardParagraph";
+  public static readonly id = "forwardParagraph";
 
   public execute(textEditor: TextEditor, isInMarkMode: boolean, prefixArgument: number | undefined): void {
     const repeat = prefixArgument === undefined ? 1 : prefixArgument;
@@ -479,7 +479,7 @@ export class ForwardParagraph extends EmacsCommand {
 }
 
 export class BackwardParagraph extends EmacsCommand {
-  public readonly id = "backwardParagraph";
+  public static readonly id = "backwardParagraph";
 
   public execute(textEditor: TextEditor, isInMarkMode: boolean, prefixArgument: number | undefined): void {
     const repeat = prefixArgument === undefined ? 1 : prefixArgument;

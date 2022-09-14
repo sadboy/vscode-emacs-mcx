@@ -6,7 +6,7 @@ export function createParallel<T>(concurrency: number, promiseFactory: () => The
 }
 
 export abstract class EmacsCommand {
-  public abstract readonly id: string;
+  public static readonly id: string;
 
   protected emacsController: IEmacsController;
 
@@ -17,15 +17,17 @@ export abstract class EmacsCommand {
   public run(
     textEditor: TextEditor,
     isInMarkMode: boolean,
-    prefixArgument: number | undefined
+    prefixArgument: number | undefined,
+    ...args: any[]
   ): Thenable<unknown> | void {
-    return this.execute(textEditor, isInMarkMode, prefixArgument);
+    return this.execute(textEditor, isInMarkMode, prefixArgument, ...args);
   }
 
   public abstract execute(
     textEditor: TextEditor,
     isInMarkMode: boolean,
-    prefixArgument: number | undefined
+    prefixArgument: number | undefined,
+    ...args: any[]
   ): void | Thenable<unknown>;
 }
 

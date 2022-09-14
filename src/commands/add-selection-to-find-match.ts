@@ -3,7 +3,7 @@ import { TextEditor } from "vscode";
 import { EmacsCommand } from ".";
 
 export class AddSelectionToNextFindMatch extends EmacsCommand {
-  public readonly id = "addSelectionToNextFindMatch";
+  public static readonly id = "addSelectionToNextFindMatch";
 
   public execute(
     textEditor: TextEditor, isInMarkMode: boolean, prefixArgument: number | undefined
@@ -14,7 +14,7 @@ export class AddSelectionToNextFindMatch extends EmacsCommand {
 }
 
 export class AddSelectionToPreviousFindMatch extends EmacsCommand {
-  public readonly id = "addSelectionToPreviousFindMatch";
+  public static readonly id = "addSelectionToPreviousFindMatch";
 
   public execute(
     textEditor: TextEditor, isInMarkMode: boolean, prefixArgument: number | undefined

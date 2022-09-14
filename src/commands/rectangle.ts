@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { TextEditor } from "vscode";
 import { EmacsCommand, IEmacsCommandInterrupted } from ".";
-import { IEmacsController } from "../emulator";
+import { IEmacsController, RectangleState } from "../emulator";
 import { getNonEmptySelections, makeSelectionsEmpty } from "./helpers/selection";
 import { convertSelectionToRectSelections } from "../rectangle";
 import { revealPrimaryActive } from "./helpers/reveal";
@@ -17,7 +17,7 @@ import { Minibuffer } from "src/minibuffer";
  * Then, `kill-rectangle` can be executed through `C-x r k`.
  */
 export class StartAcceptingRectCommand extends EmacsCommand implements IEmacsCommandInterrupted {
-  public readonly id = "startAcceptingRectCommand";
+  public static readonly id = "startRectCommand";
 
   private acceptingRectCommand = false;
 
@@ -42,22 +42,19 @@ export class StartAcceptingRectCommand extends EmacsCommand implements IEmacsCom
   }
 }
 
-type KilledRectangle = string[];
-export interface RectangleState {
-  latestKilledRectangle: KilledRectangle; // multi-cursor is not supported
-}
-
 export abstract class RectangleKillYankCommand extends EmacsCommand {
   protected rectangleState: RectangleState;
 
-  public constructor(emacsController: IEmacsController, rectangleState: RectangleState) {
+  public constructor(emacsController: IEmacsController) {
     super(emacsController);
 
-    this.rectangleState = rectangleState;
+    this.rectangleState = emacsController.rectangleState;
   }
 }
 
-async function deleteRanges(textEditor: vscode.TextEditor, ranges: vscode.Range[], maxTrials = 3): Promise<boolean> {
+async function deleteRanges(
+  textEditor: vscode.TextEditor, ranges: vscode.Range[], maxTrials = 3
+): Promise<boolean> {
   let success = false;
   let trial = 0;
   while (!success && trial < maxTrials) {
@@ -113,19 +110,19 @@ abstract class EditRectangle extends RectangleKillYankCommand {
 }
 
 export class DeleteRectangle extends EditRectangle {
-  public readonly id = "deleteRectangle";
+  public static readonly id = "deleteRectangle";
   protected delete = true;
   protected copy = false;
 }
 
 export class CopyRectangleAsKill extends EditRectangle {
-  public readonly id = "copyRectangleAsKill";
+  public static readonly id = "copyRectangleAsKill";
   protected delete = false;
   protected copy = true;
 }
 
 export class KillRectangle extends EditRectangle {
-  public readonly id = "killRectangle";
+  public static readonly id = "killRectangle";
   protected delete = true;
   protected copy = true;
 }
@@ -142,7 +139,7 @@ const getEolChar = (eol: vscode.EndOfLine): string | undefined => {
 };
 
 export class YankRectangle extends RectangleKillYankCommand {
-  public readonly id = "yankRectangle";
+  public static readonly id = "yankRectangle";
 
   public async execute(
     textEditor: TextEditor,
@@ -200,9 +197,11 @@ export class YankRectangle extends RectangleKillYankCommand {
 }
 
 export class OpenRectangle extends EmacsCommand {
-  public readonly id = "openRectangle";
+  public static readonly id = "openRectangle";
 
-  public async execute(textEditor: TextEditor, isInMarkMode: boolean, prefixArgument: number | undefined) {
+  public async execute(
+    textEditor: TextEditor, isInMarkMode: boolean, prefixArgument: number | undefined
+  ): Promise<void> {
     const selections = getNonEmptySelections(textEditor);
     if (selections.length === 0) {
       return;
@@ -226,9 +225,11 @@ export class OpenRectangle extends EmacsCommand {
 }
 
 export class ClearRectangle extends EmacsCommand {
-  public readonly id = "clearRectangle";
+  public static readonly id = "clearRectangle";
 
-  public async execute(textEditor: TextEditor, isInMarkMode: boolean, prefixArgument: number | undefined) {
+  public async execute(
+    textEditor: TextEditor, isInMarkMode: boolean, prefixArgument: number | undefined
+  ): Promise<void> {
     const selections = getNonEmptySelections(textEditor);
     if (selections.length === 0) {
       return;
@@ -250,16 +251,18 @@ export class ClearRectangle extends EmacsCommand {
 }
 
 export class StringRectangle extends EmacsCommand {
-  public readonly id = "stringRectangle";
+  public static readonly id = "stringRectangle";
 
   private minibuffer: Minibuffer;
 
-  constructor(markModeController: IEmacsController, minibuffer: Minibuffer) {
-    super(markModeController);
-    this.minibuffer = minibuffer;
+  constructor(emacsController: IEmacsController) {
+    super(emacsController);
+    this.minibuffer = emacsController.miniBuffer;
   }
 
-  public async execute(textEditor: TextEditor, isInMarkMode: boolean, prefixArgument: number | undefined) {
+  public async execute(
+    textEditor: TextEditor, isInMarkMode: boolean, prefixArgument: number | undefined
+  ): Promise<void> {
     const replaceString = await this.minibuffer.readFromMinibuffer({ prompt: "String rectangle" });
 
     if (replaceString == null) {
@@ -286,12 +289,12 @@ export class StringRectangle extends EmacsCommand {
 }
 
 export class ReplaceKillRingToRectangle extends EmacsCommand {
-  public readonly id = "replaceKillRingToRectangle";
+  public static readonly id = "replaceKillRingToRectangle";
   private killring: KillRing | null;
 
-  public constructor(emacsController: IEmacsController, killring: KillRing | null) {
+  public constructor(emacsController: IEmacsController) {
     super(emacsController);
-    this.killring = killring;
+    this.killring = emacsController.killRing;
   }
 
   public async execute(
