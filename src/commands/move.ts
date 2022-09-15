@@ -27,6 +27,19 @@ export const moveCommandIds = [
   "backToIndentation",
 ];
 
+export class RevealDefinition extends EmacsCommand {
+  public static readonly id = "revealDefinition";
+
+  public execute(
+    textEditor: vscode.TextEditor, isInMarkMode: boolean, prefixArgument: number | undefined
+  ): void | Thenable<unknown> {
+    this.emacsController.deactivateMark();
+    this.emacsController.pushMark();
+    return vscode.commands.executeCommand("editor.action.revealDefinition");
+  }
+
+}
+
 export class ForwardChar extends EmacsCommand {
   public static readonly id = "forwardChar";
 

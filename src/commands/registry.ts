@@ -18,6 +18,7 @@ const _CommandRegister = new Map([
   ExchangePointAndMarkCommand,
   RectangleMarkModeCommand,
 
+  MoveCommands.RevealDefinition,
   MoveCommands.ForwardChar,
   MoveCommands.BackwardChar,
   MoveCommands.NextLine,
