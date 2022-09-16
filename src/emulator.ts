@@ -13,6 +13,7 @@ import { Marker, MarkRing } from "./mark-ring";
 import { convertSelectionToRectSelections } from "./rectangle";
 import { InputBoxMinibuffer, Minibuffer } from "./minibuffer";
 import { revealPrimaryActive } from "./commands/helpers/reveal";
+import assert from "assert";
 
 export interface SearchState {
   startSelections: readonly vscode.Selection[] | undefined;
@@ -187,21 +188,25 @@ export class EmacsEmulator implements vscode.Disposable {
       if (!this._isInCommand && this._hasSelectionStateChanged()) {
         // Editor state was modified by forces beyond our control:
         this.thisCommand = undefined;
-        this._syncMarkToRegion();
+        this._syncMarkAndSelection();
       }
       // TODO: remove:
       this.onDidInterruptTextEditor();
     }
   }
 
-
-  private _syncMarkToRegion(): void {
+  private _syncMarkAndSelection(): void {
     if (!this.rectMode) {
       if (this.isRegionActive) {
+        // Outside command activated region, update our mark to match:
         const mark = Marker.fromAnchor(this.textEditor.selections);
         if (!this.mark || !mark.isEqual(this.mark)) {
           this.pushMark(mark);
         }
+      } else if (this.isMarkActive) {
+        // Mark is active but outside command deactivated region, so we reactivate:
+        assert(this.mark);
+        this.textEditor.selections = this.mark.toAnchor(this.textEditor.selections);
       }
     }
     this._nativeSelections = this.textEditor.selections;
