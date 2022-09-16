@@ -19,6 +19,7 @@ const _CommandRegister = new Map([
   RectangleMarkModeCommand,
 
   MoveCommands.RevealDefinition,
+  MoveCommands.RevealReference,
   MoveCommands.ForwardChar,
   MoveCommands.BackwardChar,
   MoveCommands.NextLine,

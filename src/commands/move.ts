@@ -40,6 +40,19 @@ export class RevealDefinition extends EmacsCommand {
 
 }
 
+export class RevealReference extends EmacsCommand {
+  public static readonly id = "revealReference";
+
+  public execute(
+    textEditor: vscode.TextEditor, isInMarkMode: boolean, prefixArgument: number | undefined
+  ): void | Thenable<unknown> {
+    this.emacsController.deactivateMark();
+    this.emacsController.pushMark();
+    return vscode.commands.executeCommand("revealReference");
+  }
+
+}
+
 export class ForwardChar extends EmacsCommand {
   public static readonly id = "forwardChar";
 
