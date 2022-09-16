@@ -7,8 +7,8 @@ export class SetMarkCommand extends EmacsCommand {
   public static readonly id = "setMarkCommand";
 
   public execute(
-    textEditor: vscode.TextEditor, isInMarkMode: boolean, prefixArgument: number | undefined):
-    void | Thenable<unknown> {
+    textEditor: vscode.TextEditor, isInMarkMode: boolean, prefixArgument: number | undefined
+  ): void | Thenable<unknown> {
     const controller: EmacsEmulator = this.emacsController;
 
     if (
@@ -36,8 +36,8 @@ export class PopMarkCommand extends EmacsCommand {
   public static readonly id = "popMark";
 
   public execute(
-    textEditor: vscode.TextEditor, isInMarkMode: boolean, prefixArgument: number | undefined):
-    void | Thenable<unknown> {
+    textEditor: vscode.TextEditor, isInMarkMode: boolean, prefixArgument: number | undefined
+  ): void | Thenable<unknown> {
     const controller = this.emacsController;
 
     if (isInMarkMode) {
@@ -56,8 +56,8 @@ export class ExchangePointAndMarkCommand extends EmacsCommand {
   public static readonly id = "exchangePointAndMark";
 
   public execute(
-    textEditor: vscode.TextEditor, isInMarkMode: boolean, prefixArgument: number | undefined):
-    void | Thenable<unknown> {
+    textEditor: vscode.TextEditor, isInMarkMode: boolean, prefixArgument: number | undefined
+  ): void | Thenable<unknown> {
     const controller = this.emacsController;
     if (controller.prefixArgumentHandler.precedingSingleCtrlU()) {
       controller.activateMark();

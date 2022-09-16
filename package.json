@@ -2,7 +2,7 @@
 	"name": "emacs-mcx",
 	"displayName": "Awesome Emacs Keymap",
 	"description": "Emacs Friendly Keymap with multi cursor support, improved mark-mode experience, clipboard and kill-ring integration, and lots of improvements and bug fixes.",
-	"version": "44.1.1",
+	"version": "44.1.2",
 	"publisher": "tuttieee",
 	"repository": {
 		"type": "git",
@@ -1661,6 +1661,11 @@
 				"key": "alt+.",
 				"command": "emacs-mcx.revealDefinition",
 				"when": "editorHasDefinitionProvider && editorTextFocus && !isInEmbeddedEditor"
+			},
+			{
+				"key": "enter",
+				"command": "emacs-mcx.revealReference",
+				"when": "listFocus && referenceSearchVisible && !inputFocus && !treeElementCanCollapse && !treeElementCanExpand"
 			},
 			{
 				"key": "right",
