@@ -1,4 +1,15 @@
 {
-  "printWidth": 120,
-  "endOfLine": "auto"
+    "trailingComma": "es5",
+    "tabWidth": 4,
+    "printWidth": 80,
+    "endOfLine": "auto",
+    "overrides": [
+        {
+            "files": ["*.json", ".prettierrc"],
+            "options": {
+                "tabWidth": 2,
+                "printWidth": 100
+            }
+        }
+    ]
 }

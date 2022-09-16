@@ -3,103 +3,133 @@ import * as vscode from "vscode";
 import { Position, Range, Selection, TextEditor } from "vscode";
 
 export async function setupWorkspace(
-  initialText = "",
-  {
-    eol = vscode.EndOfLine.LF,
-    language = "text",
-  }: {
-    eol?: vscode.EndOfLine;
-    language?: string;
-  } = {}
+    initialText = "",
+    {
+        eol = vscode.EndOfLine.LF,
+        language = "text",
+    }: {
+        eol?: vscode.EndOfLine;
+        language?: string;
+    } = {}
 ): Promise<vscode.TextEditor> {
-  const doc = await vscode.workspace.openTextDocument({
-    content: initialText,
-    language,
-  });
+    const doc = await vscode.workspace.openTextDocument({
+        content: initialText,
+        language,
+    });
 
-  await vscode.window.showTextDocument(doc);
+    await vscode.window.showTextDocument(doc);
 
-  const activeTextEditor = vscode.window.activeTextEditor;
-  assert.ok(activeTextEditor);
+    const activeTextEditor = vscode.window.activeTextEditor;
+    assert.ok(activeTextEditor);
 
-  // Set EOL to LF for the tests to work even on Windows
-  await (activeTextEditor as TextEditor).edit((editBuilder) => editBuilder.setEndOfLine(eol));
+    // Set EOL to LF for the tests to work even on Windows
+    await (activeTextEditor as TextEditor).edit((editBuilder) =>
+        editBuilder.setEndOfLine(eol)
+    );
 
-  return activeTextEditor as TextEditor;
+    return activeTextEditor as TextEditor;
 }
 
-export async function clearTextEditor(textEditor: TextEditor, initializeWith = "") {
-  const doc = textEditor.document;
-  await textEditor.edit((editBuilder) => {
-    editBuilder.delete(new Range(new Position(0, 0), doc.positionAt(doc.getText().length)));
-  });
-  await textEditor.edit((editBuilder) => {
-    editBuilder.insert(new Position(0, 0), initializeWith);
-  });
-  assert.strictEqual(doc.getText(), initializeWith);
+export async function clearTextEditor(
+    textEditor: TextEditor,
+    initializeWith = ""
+) {
+    const doc = textEditor.document;
+    await textEditor.edit((editBuilder) => {
+        editBuilder.delete(
+            new Range(new Position(0, 0), doc.positionAt(doc.getText().length))
+        );
+    });
+    await textEditor.edit((editBuilder) => {
+        editBuilder.insert(new Position(0, 0), initializeWith);
+    });
+    assert.strictEqual(doc.getText(), initializeWith);
 }
 
-export function setEmptyCursors(textEditor: TextEditor, ...positions: Array<[number, number]>) {
-  textEditor.selections = positions.map((p) => new Selection(new Position(p[0], p[1]), new Position(p[0], p[1])));
+export function setEmptyCursors(
+    textEditor: TextEditor,
+    ...positions: Array<[number, number]>
+) {
+    textEditor.selections = positions.map(
+        (p) => new Selection(new Position(p[0], p[1]), new Position(p[0], p[1]))
+    );
 }
 
 export async function cleanUpWorkspace(): Promise<void> {
-  return new Promise<void>((c, e) => {
-    if (vscode.window.visibleTextEditors.length === 0) {
-      return c();
-    }
+    return new Promise<void>((c, e) => {
+        if (vscode.window.visibleTextEditors.length === 0) {
+            return c();
+        }
 
-    // TODO: the visibleTextEditors variable doesn't seem to be
-    // up to date after a onDidChangeActiveTextEditor event, not
-    // even using a setTimeout 0... so we MUST poll :(
-    const interval = setInterval(() => {
-      if (vscode.window.visibleTextEditors.length > 0) {
-        return;
-      }
+        // TODO: the visibleTextEditors variable doesn't seem to be
+        // up to date after a onDidChangeActiveTextEditor event, not
+        // even using a setTimeout 0... so we MUST poll :(
+        const interval = setInterval(() => {
+            if (vscode.window.visibleTextEditors.length > 0) {
+                return;
+            }
 
-      clearInterval(interval);
-      c();
-    }, 10);
+            clearInterval(interval);
+            c();
+        }, 10);
 
-    vscode.commands.executeCommand("workbench.action.closeAllEditors").then(
-      () => null,
-      (err: any) => {
-        clearInterval(interval);
-        e(err);
-      }
-    );
-  }).then(() => {
-    assert.strictEqual(vscode.window.visibleTextEditors.length, 0, "Expected all editors closed.");
-    assert(!vscode.window.activeTextEditor, "Expected no active text editor.");
-  });
+        vscode.commands.executeCommand("workbench.action.closeAllEditors").then(
+            () => null,
+            (err: any) => {
+                clearInterval(interval);
+                e(err);
+            }
+        );
+    }).then(() => {
+        assert.strictEqual(
+            vscode.window.visibleTextEditors.length,
+            0,
+            "Expected all editors closed."
+        );
+        assert(
+            !vscode.window.activeTextEditor,
+            "Expected no active text editor."
+        );
+    });
 }
 
 export function assertTextEqual(textEditor: TextEditor, expectedText: string) {
-  assert.strictEqual(textEditor.document.getText(), expectedText);
+    assert.strictEqual(textEditor.document.getText(), expectedText);
 }
 
-export function assertCursorsEqual(textEditor: TextEditor, ...positions: Array<[number, number]>) {
-  assert.strictEqual(textEditor.selections.length, positions.length);
-  textEditor.selections.forEach((selection, idx) => {
-    // `textEditor.selections.length === positions.length` has already been checked,
-    // so noUncheckedIndexedAccess rule can be skipped here.
-    const pos = positions[idx]!; // eslint-disable-line @typescript-eslint/no-non-null-assertion
-    const expectedRange = new Range(new Position(pos[0], pos[1]), new Position(pos[0], pos[1]));
-    assert.ok(
-      selection.isEqual(expectedRange),
-      `${JSON.stringify(selection)} is not equal to ${JSON.stringify(expectedRange)}`
-    );
-  });
+export function assertCursorsEqual(
+    textEditor: TextEditor,
+    ...positions: Array<[number, number]>
+) {
+    assert.strictEqual(textEditor.selections.length, positions.length);
+    textEditor.selections.forEach((selection, idx) => {
+        // `textEditor.selections.length === positions.length` has already been checked,
+        // so noUncheckedIndexedAccess rule can be skipped here.
+        const pos = positions[idx]!; // eslint-disable-line @typescript-eslint/no-non-null-assertion
+        const expectedRange = new Range(
+            new Position(pos[0], pos[1]),
+            new Position(pos[0], pos[1])
+        );
+        assert.ok(
+            selection.isEqual(expectedRange),
+            `${JSON.stringify(selection)} is not equal to ${JSON.stringify(
+                expectedRange
+            )}`
+        );
+    });
 }
 
-export function assertSelectionsEqual(textEditor: TextEditor, ...selections: Array<Selection>) {
-  assert.strictEqual(textEditor.selections.length, selections.length);
-  textEditor.selections.forEach((actualSelection, idx) => {
-    const expectSelection = selections[idx];
-    assert.deepStrictEqual(actualSelection, expectSelection);
-  });
+export function assertSelectionsEqual(
+    textEditor: TextEditor,
+    ...selections: Array<Selection>
+) {
+    assert.strictEqual(textEditor.selections.length, selections.length);
+    textEditor.selections.forEach((actualSelection, idx) => {
+        const expectSelection = selections[idx];
+        assert.deepStrictEqual(actualSelection, expectSelection);
+    });
 }
 
 export function delay(time?: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, time));
+    return new Promise((resolve) => setTimeout(resolve, time));
 }

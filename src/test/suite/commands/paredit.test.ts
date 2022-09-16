@@ -4,69 +4,69 @@ import { Selection, TextEditor } from "vscode";
 import { EmacsEmulator } from "../../../emulator";
 import { KillRing } from "../../../kill-yank/kill-ring";
 import {
-  setEmptyCursors,
-  setupWorkspace,
-  cleanUpWorkspace,
-  assertCursorsEqual,
-  assertTextEqual,
-  clearTextEditor,
-  assertSelectionsEqual,
+    setEmptyCursors,
+    setupWorkspace,
+    cleanUpWorkspace,
+    assertCursorsEqual,
+    assertTextEqual,
+    clearTextEditor,
+    assertSelectionsEqual,
 } from "../utils";
 
 suite("paredit commands", () => {
-  let activeTextEditor: TextEditor;
-  let emulator: EmacsEmulator;
+    let activeTextEditor: TextEditor;
+    let emulator: EmacsEmulator;
 
-  setup(async () => {
-    const initialText = "(a b)";
+    setup(async () => {
+        const initialText = "(a b)";
 
-    activeTextEditor = await setupWorkspace(initialText);
-    emulator = new EmacsEmulator(activeTextEditor);
-  });
-
-  teardown(cleanUpWorkspace);
-
-  suite("forwardSexp", () => {
-    test("without mark-mode", async () => {
-      setEmptyCursors(activeTextEditor, [0, 0]);
-
-      await emulator.runCommand("paredit.forwardSexp");
-
-      assertSelectionsEqual(activeTextEditor, new Selection(0, 5, 0, 5));
+        activeTextEditor = await setupWorkspace(initialText);
+        emulator = new EmacsEmulator(activeTextEditor);
     });
 
-    test("with mark-mode", async () => {
-      setEmptyCursors(activeTextEditor, [0, 0]);
+    teardown(cleanUpWorkspace);
 
-      await emulator.runCommand("setMarkCommand");
-      await emulator.runCommand("paredit.forwardSexp");
+    suite("forwardSexp", () => {
+        test("without mark-mode", async () => {
+            setEmptyCursors(activeTextEditor, [0, 0]);
 
-      assertSelectionsEqual(activeTextEditor, new Selection(0, 0, 0, 5));
+            await emulator.runCommand("paredit.forwardSexp");
+
+            assertSelectionsEqual(activeTextEditor, new Selection(0, 5, 0, 5));
+        });
+
+        test("with mark-mode", async () => {
+            setEmptyCursors(activeTextEditor, [0, 0]);
+
+            await emulator.runCommand("setMarkCommand");
+            await emulator.runCommand("paredit.forwardSexp");
+
+            assertSelectionsEqual(activeTextEditor, new Selection(0, 0, 0, 5));
+        });
     });
-  });
 
-  suite("backwardSexp", () => {
-    test("without mark-mode", async () => {
-      setEmptyCursors(activeTextEditor, [0, 5]);
+    suite("backwardSexp", () => {
+        test("without mark-mode", async () => {
+            setEmptyCursors(activeTextEditor, [0, 5]);
 
-      await emulator.runCommand("paredit.backwardSexp");
+            await emulator.runCommand("paredit.backwardSexp");
 
-      assertSelectionsEqual(activeTextEditor, new Selection(0, 0, 0, 0));
+            assertSelectionsEqual(activeTextEditor, new Selection(0, 0, 0, 0));
+        });
+
+        test("with mark-mode", async () => {
+            setEmptyCursors(activeTextEditor, [0, 5]);
+
+            await emulator.runCommand("setMarkCommand");
+            await emulator.runCommand("paredit.backwardSexp");
+
+            assertSelectionsEqual(activeTextEditor, new Selection(0, 5, 0, 0));
+        });
     });
-
-    test("with mark-mode", async () => {
-      setEmptyCursors(activeTextEditor, [0, 5]);
-
-      await emulator.runCommand("setMarkCommand");
-      await emulator.runCommand("paredit.backwardSexp");
-
-      assertSelectionsEqual(activeTextEditor, new Selection(0, 5, 0, 0));
-    });
-  });
 });
 
 suite("paredit.kill-sexp", () => {
-  const initialText = `(
+    const initialText = `(
   (
     a b
   )
@@ -74,106 +74,106 @@ suite("paredit.kill-sexp", () => {
     c d
   )
 )`;
-  let activeTextEditor: TextEditor;
-  let emulator: EmacsEmulator;
+    let activeTextEditor: TextEditor;
+    let emulator: EmacsEmulator;
 
-  setup(async () => {
-    activeTextEditor = await setupWorkspace(initialText);
-    const killRing = new KillRing(60);
-    emulator = new EmacsEmulator(activeTextEditor, killRing);
-  });
+    setup(async () => {
+        activeTextEditor = await setupWorkspace(initialText);
+        const killRing = new KillRing(60);
+        emulator = new EmacsEmulator(activeTextEditor, killRing);
+    });
 
-  teardown(cleanUpWorkspace);
+    teardown(cleanUpWorkspace);
 
-  test("killing outer parentheses", async () => {
-    setEmptyCursors(activeTextEditor, [0, 0]);
+    test("killing outer parentheses", async () => {
+        setEmptyCursors(activeTextEditor, [0, 0]);
 
-    await emulator.runCommand("paredit.killSexp");
+        await emulator.runCommand("paredit.killSexp");
 
-    assertTextEqual(activeTextEditor, "");
-    assertCursorsEqual(activeTextEditor, [0, 0]);
+        assertTextEqual(activeTextEditor, "");
+        assertCursorsEqual(activeTextEditor, [0, 0]);
 
-    await clearTextEditor(activeTextEditor);
+        await clearTextEditor(activeTextEditor);
 
-    await emulator.runCommand("yank");
+        await emulator.runCommand("yank");
 
-    assertTextEqual(activeTextEditor, initialText);
-  });
+        assertTextEqual(activeTextEditor, initialText);
+    });
 
-  test("killing inner parentheses continuously", async () => {
-    setEmptyCursors(activeTextEditor, [1, 0]);
+    test("killing inner parentheses continuously", async () => {
+        setEmptyCursors(activeTextEditor, [1, 0]);
 
-    await emulator.runCommand("paredit.killSexp");
+        await emulator.runCommand("paredit.killSexp");
 
-    assertTextEqual(
-      activeTextEditor,
-      `(
+        assertTextEqual(
+            activeTextEditor,
+            `(
 
   (
     c d
   )
 )`
-    );
-    assertCursorsEqual(activeTextEditor, [1, 0]);
+        );
+        assertCursorsEqual(activeTextEditor, [1, 0]);
 
-    await emulator.runCommand("paredit.killSexp");
+        await emulator.runCommand("paredit.killSexp");
 
-    assertTextEqual(
-      activeTextEditor,
-      `(
+        assertTextEqual(
+            activeTextEditor,
+            `(
 
 )`
-    );
-    assertCursorsEqual(activeTextEditor, [1, 0]);
+        );
+        assertCursorsEqual(activeTextEditor, [1, 0]);
 
-    await clearTextEditor(activeTextEditor);
+        await clearTextEditor(activeTextEditor);
 
-    await emulator.runCommand("yank");
+        await emulator.runCommand("yank");
 
-    assertTextEqual(
-      activeTextEditor,
-      `  (
+        assertTextEqual(
+            activeTextEditor,
+            `  (
     a b
   )
   (
     c d
   )`
-    );
-  });
+        );
+    });
 
-  test("killing inner parentheses with prefix argument", async () => {
-    setEmptyCursors(activeTextEditor, [1, 0]);
+    test("killing inner parentheses with prefix argument", async () => {
+        setEmptyCursors(activeTextEditor, [1, 0]);
 
-    await emulator.universalArgument();
-    await emulator.subsequentArgumentDigit(2);
-    await emulator.runCommand("paredit.killSexp");
+        await emulator.universalArgument();
+        await emulator.subsequentArgumentDigit(2);
+        await emulator.runCommand("paredit.killSexp");
 
-    assertTextEqual(
-      activeTextEditor,
-      `(
+        assertTextEqual(
+            activeTextEditor,
+            `(
 
 )`
-    );
-    assertCursorsEqual(activeTextEditor, [1, 0]);
+        );
+        assertCursorsEqual(activeTextEditor, [1, 0]);
 
-    await clearTextEditor(activeTextEditor);
+        await clearTextEditor(activeTextEditor);
 
-    await emulator.runCommand("yank");
+        await emulator.runCommand("yank");
 
-    assertTextEqual(
-      activeTextEditor,
-      `  (
+        assertTextEqual(
+            activeTextEditor,
+            `  (
     a b
   )
   (
     c d
   )`
-    );
-  });
+        );
+    });
 });
 
 suite("paredit.backward-kill-sexp", () => {
-  const initialText = `(
+    const initialText = `(
   (
     a b
   )
@@ -181,106 +181,106 @@ suite("paredit.backward-kill-sexp", () => {
     c d
   )
 )`;
-  let activeTextEditor: TextEditor;
-  let emulator: EmacsEmulator;
+    let activeTextEditor: TextEditor;
+    let emulator: EmacsEmulator;
 
-  setup(async () => {
-    activeTextEditor = await setupWorkspace(initialText);
-    const killRing = new KillRing(60);
-    emulator = new EmacsEmulator(activeTextEditor, killRing);
-  });
+    setup(async () => {
+        activeTextEditor = await setupWorkspace(initialText);
+        const killRing = new KillRing(60);
+        emulator = new EmacsEmulator(activeTextEditor, killRing);
+    });
 
-  teardown(cleanUpWorkspace);
+    teardown(cleanUpWorkspace);
 
-  test("killing outer parentheses", async () => {
-    setEmptyCursors(activeTextEditor, [7, 1]);
+    test("killing outer parentheses", async () => {
+        setEmptyCursors(activeTextEditor, [7, 1]);
 
-    await emulator.runCommand("paredit.backwardKillSexp");
+        await emulator.runCommand("paredit.backwardKillSexp");
 
-    assertTextEqual(activeTextEditor, "");
-    assertCursorsEqual(activeTextEditor, [0, 0]);
+        assertTextEqual(activeTextEditor, "");
+        assertCursorsEqual(activeTextEditor, [0, 0]);
 
-    await clearTextEditor(activeTextEditor);
+        await clearTextEditor(activeTextEditor);
 
-    await emulator.runCommand("yank");
+        await emulator.runCommand("yank");
 
-    assertTextEqual(activeTextEditor, initialText);
-  });
+        assertTextEqual(activeTextEditor, initialText);
+    });
 
-  test("killing inner parentheses continuously", async () => {
-    setEmptyCursors(activeTextEditor, [6, 3]);
+    test("killing inner parentheses continuously", async () => {
+        setEmptyCursors(activeTextEditor, [6, 3]);
 
-    await emulator.runCommand("paredit.backwardKillSexp");
+        await emulator.runCommand("paredit.backwardKillSexp");
 
-    assertTextEqual(
-      activeTextEditor,
-      `(
+        assertTextEqual(
+            activeTextEditor,
+            `(
   (
     a b
   )
   
 )`
-    );
-    assertCursorsEqual(activeTextEditor, [4, 2]);
+        );
+        assertCursorsEqual(activeTextEditor, [4, 2]);
 
-    await emulator.runCommand("paredit.backwardKillSexp");
+        await emulator.runCommand("paredit.backwardKillSexp");
 
-    assertTextEqual(
-      activeTextEditor,
-      `(
+        assertTextEqual(
+            activeTextEditor,
+            `(
   
 )`
-    );
-    assertCursorsEqual(activeTextEditor, [1, 2]);
+        );
+        assertCursorsEqual(activeTextEditor, [1, 2]);
 
-    await clearTextEditor(activeTextEditor);
+        await clearTextEditor(activeTextEditor);
 
-    await emulator.runCommand("yank");
+        await emulator.runCommand("yank");
 
-    assertTextEqual(
-      activeTextEditor,
-      `(
-    a b
-  )
-  (
-    c d
-  )`
-    );
-  });
-
-  test("killing inner parentheses with prefix argument", async () => {
-    setEmptyCursors(activeTextEditor, [6, 3]);
-
-    await emulator.universalArgument();
-    await emulator.subsequentArgumentDigit(2);
-    await emulator.runCommand("paredit.backwardKillSexp");
-
-    assertTextEqual(
-      activeTextEditor,
-      `(
-  
-)`
-    );
-    assertCursorsEqual(activeTextEditor, [1, 2]);
-
-    await clearTextEditor(activeTextEditor);
-
-    await emulator.runCommand("yank");
-
-    assertTextEqual(
-      activeTextEditor,
-      `(
+        assertTextEqual(
+            activeTextEditor,
+            `(
     a b
   )
   (
     c d
   )`
-    );
-  });
+        );
+    });
+
+    test("killing inner parentheses with prefix argument", async () => {
+        setEmptyCursors(activeTextEditor, [6, 3]);
+
+        await emulator.universalArgument();
+        await emulator.subsequentArgumentDigit(2);
+        await emulator.runCommand("paredit.backwardKillSexp");
+
+        assertTextEqual(
+            activeTextEditor,
+            `(
+  
+)`
+        );
+        assertCursorsEqual(activeTextEditor, [1, 2]);
+
+        await clearTextEditor(activeTextEditor);
+
+        await emulator.runCommand("yank");
+
+        assertTextEqual(
+            activeTextEditor,
+            `(
+    a b
+  )
+  (
+    c d
+  )`
+        );
+    });
 });
 
 suite("paredit.mark-sexp", () => {
-  const initialText = `(
+    const initialText = `(
   (
     a b
   )
@@ -288,215 +288,218 @@ suite("paredit.mark-sexp", () => {
     c d
   )
 )`;
-  let activeTextEditor: TextEditor;
-  let emulator: EmacsEmulator;
+    let activeTextEditor: TextEditor;
+    let emulator: EmacsEmulator;
 
-  setup(async () => {
-    activeTextEditor = await setupWorkspace(initialText);
-    const killRing = new KillRing(60);
-    emulator = new EmacsEmulator(activeTextEditor, killRing);
-  });
+    setup(async () => {
+        activeTextEditor = await setupWorkspace(initialText);
+        const killRing = new KillRing(60);
+        emulator = new EmacsEmulator(activeTextEditor, killRing);
+    });
 
-  teardown(cleanUpWorkspace);
+    teardown(cleanUpWorkspace);
 
-  test("set mark at the outer parentheses", async () => {
-    setEmptyCursors(activeTextEditor, [0, 0]);
+    test("set mark at the outer parentheses", async () => {
+        setEmptyCursors(activeTextEditor, [0, 0]);
 
-    await emulator.runCommand("paredit.markSexp");
+        await emulator.runCommand("paredit.markSexp");
 
-    assertTextEqual(activeTextEditor, initialText);
-    assertSelectionsEqual(activeTextEditor, new Selection(0, 0, 7, 1));
-    assert.ok(emulator.isMarkActive);
+        assertTextEqual(activeTextEditor, initialText);
+        assertSelectionsEqual(activeTextEditor, new Selection(0, 0, 7, 1));
+        assert.ok(emulator.isMarkActive);
 
-    emulator.deactivateMark();
-    activeTextEditor.selection = new Selection(0, 0, 0, 0);
-    await emulator.runCommand("popMark");
-    assertCursorsEqual(activeTextEditor, [7, 1]);
-  });
+        emulator.deactivateMark();
+        activeTextEditor.selection = new Selection(0, 0, 0, 0);
+        await emulator.runCommand("popMark");
+        assertCursorsEqual(activeTextEditor, [7, 1]);
+    });
 
-  test("mark inner parentheses continuously", async () => {
-    setEmptyCursors(activeTextEditor, [1, 0]);
-    emulator.pushMark(Marker.fromCursor(activeTextEditor.selections));
+    test("mark inner parentheses continuously", async () => {
+        setEmptyCursors(activeTextEditor, [1, 0]);
+        emulator.pushMark(Marker.fromCursor(activeTextEditor.selections));
 
-    await emulator.runCommand("paredit.markSexp");
+        await emulator.runCommand("paredit.markSexp");
 
-    assertTextEqual(activeTextEditor, initialText);
-    assertSelectionsEqual(activeTextEditor, new Selection(1, 0, 3, 3));
+        assertTextEqual(activeTextEditor, initialText);
+        assertSelectionsEqual(activeTextEditor, new Selection(1, 0, 3, 3));
 
-    await emulator.runCommand("paredit.markSexp");
+        await emulator.runCommand("paredit.markSexp");
 
-    assertTextEqual(activeTextEditor, initialText);
-    assertSelectionsEqual(activeTextEditor, new Selection(1, 0, 6, 3));
+        assertTextEqual(activeTextEditor, initialText);
+        assertSelectionsEqual(activeTextEditor, new Selection(1, 0, 6, 3));
 
-    emulator.deactivateMark();
-    activeTextEditor.selection = new Selection(0, 0, 0, 0);
+        emulator.deactivateMark();
+        activeTextEditor.selection = new Selection(0, 0, 0, 0);
 
-    await emulator.runCommand("popMark");
-    assertCursorsEqual(activeTextEditor, [6, 3]);
-    await emulator.runCommand("popMark");
-    assertCursorsEqual(activeTextEditor, [1, 0]);
-  });
+        await emulator.runCommand("popMark");
+        assertCursorsEqual(activeTextEditor, [6, 3]);
+        await emulator.runCommand("popMark");
+        assertCursorsEqual(activeTextEditor, [1, 0]);
+    });
 
-  test("mark inner parentheses with a positive prefix argument", async () => {
-    setEmptyCursors(activeTextEditor, [1, 0]);
-    emulator.pushMark(Marker.fromCursor(activeTextEditor.selections));
+    test("mark inner parentheses with a positive prefix argument", async () => {
+        setEmptyCursors(activeTextEditor, [1, 0]);
+        emulator.pushMark(Marker.fromCursor(activeTextEditor.selections));
 
-    await emulator.universalArgument();
-    await emulator.subsequentArgumentDigit(2);
-    await emulator.runCommand("paredit.markSexp");
+        await emulator.universalArgument();
+        await emulator.subsequentArgumentDigit(2);
+        await emulator.runCommand("paredit.markSexp");
 
-    assertTextEqual(activeTextEditor, initialText);
-    assertSelectionsEqual(activeTextEditor, new Selection(1, 0, 6, 3));
+        assertTextEqual(activeTextEditor, initialText);
+        assertSelectionsEqual(activeTextEditor, new Selection(1, 0, 6, 3));
 
-    emulator.deactivateMark();
-    activeTextEditor.selection = new Selection(0, 0, 0, 0);
+        emulator.deactivateMark();
+        activeTextEditor.selection = new Selection(0, 0, 0, 0);
 
-    await emulator.runCommand("popMark");
-    assertCursorsEqual(activeTextEditor, [6, 3]);
-    await emulator.runCommand("popMark");
-    assertCursorsEqual(activeTextEditor, [1, 0]);
-  });
+        await emulator.runCommand("popMark");
+        assertCursorsEqual(activeTextEditor, [6, 3]);
+        await emulator.runCommand("popMark");
+        assertCursorsEqual(activeTextEditor, [1, 0]);
+    });
 
-  test("mark inner parentheses with a negative prefix argument", async () => {
-    setEmptyCursors(activeTextEditor, [6, 3]);
-    emulator.pushMark(Marker.fromCursor(activeTextEditor.selections));
+    test("mark inner parentheses with a negative prefix argument", async () => {
+        setEmptyCursors(activeTextEditor, [6, 3]);
+        emulator.pushMark(Marker.fromCursor(activeTextEditor.selections));
 
-    await emulator.negativeArgument();
-    await emulator.subsequentArgumentDigit(2);
-    await emulator.runCommand("paredit.markSexp");
+        await emulator.negativeArgument();
+        await emulator.subsequentArgumentDigit(2);
+        await emulator.runCommand("paredit.markSexp");
 
-    assertTextEqual(activeTextEditor, initialText);
-    assertSelectionsEqual(activeTextEditor, new Selection(6, 3, 1, 2));
+        assertTextEqual(activeTextEditor, initialText);
+        assertSelectionsEqual(activeTextEditor, new Selection(6, 3, 1, 2));
 
-    emulator.deactivateMark();
-    activeTextEditor.selection = new Selection(0, 0, 0, 0);
+        emulator.deactivateMark();
+        activeTextEditor.selection = new Selection(0, 0, 0, 0);
 
-    await emulator.runCommand("popMark");
-    assertCursorsEqual(activeTextEditor, [1, 2]);
-    await emulator.runCommand("popMark");
-    assertCursorsEqual(activeTextEditor, [6, 3]);
-  });
+        await emulator.runCommand("popMark");
+        assertCursorsEqual(activeTextEditor, [1, 2]);
+        await emulator.runCommand("popMark");
+        assertCursorsEqual(activeTextEditor, [6, 3]);
+    });
 });
 
 suite("paredit commands with a long text that requires revealing", () => {
-  let activeTextEditor: TextEditor;
-  let emulator: EmacsEmulator;
+    let activeTextEditor: TextEditor;
+    let emulator: EmacsEmulator;
 
-  setup(async () => {
-    const initialText = "(" + "\n".repeat(1000) + ")";
-
-    activeTextEditor = await setupWorkspace(initialText);
-    emulator = new EmacsEmulator(activeTextEditor);
-  });
-
-  teardown(cleanUpWorkspace);
-
-  test("forwardSexp: the selection is revealed at the active cursor", async () => {
-    setEmptyCursors(activeTextEditor, [0, 0]);
-    await emulator.runCommand("setMarkCommand");
-
-    await emulator.runCommand("paredit.forwardSexp");
-
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    assert.strictEqual(activeTextEditor.selections.length, 1);
-    assert.strictEqual(activeTextEditor.selection.active.line, 1000);
-    assert.strictEqual(activeTextEditor.visibleRanges[0]?.end.line, 1000);
-  });
-
-  test("backwardSexp: the selection is revealed at the active cursor", async () => {
-    setEmptyCursors(activeTextEditor, [1000, 1]);
-    await emulator.runCommand("setMarkCommand");
-
-    await emulator.runCommand("paredit.backwardSexp");
-
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    assert.strictEqual(activeTextEditor.selections.length, 1);
-    assert.strictEqual(activeTextEditor.selection.active.line, 0);
-    assert.strictEqual(activeTextEditor.visibleRanges[0]?.start.line, 0);
-  });
-});
-
-suite("paredit commands with prefix argument", () => {
-  let activeTextEditor: TextEditor;
-  let emulator: EmacsEmulator;
-
-  setup(async () => {
-    const initialText = "(0 1 2 3 4 5 6 7 8 9)";
-
-    activeTextEditor = await setupWorkspace(initialText);
-    emulator = new EmacsEmulator(activeTextEditor);
-  });
-
-  teardown(cleanUpWorkspace);
-
-  test("forwardSexp", async () => {
-    setEmptyCursors(activeTextEditor, [0, 2]); // the right to `0`
-
-    await emulator.universalArgument();
-    await emulator.subsequentArgumentDigit(2);
-    await emulator.runCommand("paredit.forwardSexp");
-
-    assertSelectionsEqual(activeTextEditor, new Selection(0, 6, 0, 6));
-  });
-
-  test("backwardSexp", async () => {
-    setEmptyCursors(activeTextEditor, [0, 19]); // the left to `9`
-
-    await emulator.universalArgument();
-    await emulator.subsequentArgumentDigit(2);
-    await emulator.runCommand("paredit.backwardSexp");
-
-    assertSelectionsEqual(activeTextEditor, new Selection(0, 15, 0, 15));
-  });
-});
-
-suite("with semicolon", () => {
-  const initialText = "(a ; b)\n(a ; b)\n(a ; b)";
-
-  let activeTextEditor: TextEditor;
-  let emulator: EmacsEmulator;
-
-  suite("with lisp (clojure)", () => {
     setup(async () => {
-      activeTextEditor = await setupWorkspace(initialText, {
-        language: "clojure",
-      });
-      emulator = new EmacsEmulator(activeTextEditor);
+        const initialText = "(" + "\n".repeat(1000) + ")";
+
+        activeTextEditor = await setupWorkspace(initialText);
+        emulator = new EmacsEmulator(activeTextEditor);
     });
 
     teardown(cleanUpWorkspace);
 
-    test("semicolon is treated as comment", async () => {
-      setEmptyCursors(activeTextEditor, [0, 2]);
-
-      await emulator.runCommand("paredit.forwardSexp");
-
-      // The cursor is at the beginning of the next line
-      assertSelectionsEqual(activeTextEditor, new Selection(1, 0, 1, 0));
-    });
-  });
-
-  suite("with other than lisp", () => {
-    setup(async () => {
-      activeTextEditor = await setupWorkspace(initialText, {
-        language: "csharp",
-      });
-      emulator = new EmacsEmulator(activeTextEditor);
-    });
-
-    teardown(cleanUpWorkspace);
-
-    [0, 1, 2].forEach((line) => {
-      test(`semicolon is treated as one entity (line ${line})`, async () => {
-        setEmptyCursors(activeTextEditor, [line, 2]);
+    test("forwardSexp: the selection is revealed at the active cursor", async () => {
+        setEmptyCursors(activeTextEditor, [0, 0]);
+        await emulator.runCommand("setMarkCommand");
 
         await emulator.runCommand("paredit.forwardSexp");
 
-        // The cursor is right to ";"
-        assertSelectionsEqual(activeTextEditor, new Selection(line, 4, line, 4));
-      });
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
+        assert.strictEqual(activeTextEditor.selections.length, 1);
+        assert.strictEqual(activeTextEditor.selection.active.line, 1000);
+        assert.strictEqual(activeTextEditor.visibleRanges[0]?.end.line, 1000);
     });
-  });
+
+    test("backwardSexp: the selection is revealed at the active cursor", async () => {
+        setEmptyCursors(activeTextEditor, [1000, 1]);
+        await emulator.runCommand("setMarkCommand");
+
+        await emulator.runCommand("paredit.backwardSexp");
+
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
+        assert.strictEqual(activeTextEditor.selections.length, 1);
+        assert.strictEqual(activeTextEditor.selection.active.line, 0);
+        assert.strictEqual(activeTextEditor.visibleRanges[0]?.start.line, 0);
+    });
+});
+
+suite("paredit commands with prefix argument", () => {
+    let activeTextEditor: TextEditor;
+    let emulator: EmacsEmulator;
+
+    setup(async () => {
+        const initialText = "(0 1 2 3 4 5 6 7 8 9)";
+
+        activeTextEditor = await setupWorkspace(initialText);
+        emulator = new EmacsEmulator(activeTextEditor);
+    });
+
+    teardown(cleanUpWorkspace);
+
+    test("forwardSexp", async () => {
+        setEmptyCursors(activeTextEditor, [0, 2]); // the right to `0`
+
+        await emulator.universalArgument();
+        await emulator.subsequentArgumentDigit(2);
+        await emulator.runCommand("paredit.forwardSexp");
+
+        assertSelectionsEqual(activeTextEditor, new Selection(0, 6, 0, 6));
+    });
+
+    test("backwardSexp", async () => {
+        setEmptyCursors(activeTextEditor, [0, 19]); // the left to `9`
+
+        await emulator.universalArgument();
+        await emulator.subsequentArgumentDigit(2);
+        await emulator.runCommand("paredit.backwardSexp");
+
+        assertSelectionsEqual(activeTextEditor, new Selection(0, 15, 0, 15));
+    });
+});
+
+suite("with semicolon", () => {
+    const initialText = "(a ; b)\n(a ; b)\n(a ; b)";
+
+    let activeTextEditor: TextEditor;
+    let emulator: EmacsEmulator;
+
+    suite("with lisp (clojure)", () => {
+        setup(async () => {
+            activeTextEditor = await setupWorkspace(initialText, {
+                language: "clojure",
+            });
+            emulator = new EmacsEmulator(activeTextEditor);
+        });
+
+        teardown(cleanUpWorkspace);
+
+        test("semicolon is treated as comment", async () => {
+            setEmptyCursors(activeTextEditor, [0, 2]);
+
+            await emulator.runCommand("paredit.forwardSexp");
+
+            // The cursor is at the beginning of the next line
+            assertSelectionsEqual(activeTextEditor, new Selection(1, 0, 1, 0));
+        });
+    });
+
+    suite("with other than lisp", () => {
+        setup(async () => {
+            activeTextEditor = await setupWorkspace(initialText, {
+                language: "csharp",
+            });
+            emulator = new EmacsEmulator(activeTextEditor);
+        });
+
+        teardown(cleanUpWorkspace);
+
+        [0, 1, 2].forEach((line) => {
+            test(`semicolon is treated as one entity (line ${line})`, async () => {
+                setEmptyCursors(activeTextEditor, [line, 2]);
+
+                await emulator.runCommand("paredit.forwardSexp");
+
+                // The cursor is right to ";"
+                assertSelectionsEqual(
+                    activeTextEditor,
+                    new Selection(line, 4, line, 4)
+                );
+            });
+        });
+    });
 });

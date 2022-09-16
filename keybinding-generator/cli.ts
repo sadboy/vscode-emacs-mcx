@@ -1,11 +1,11 @@
 import * as fs from "fs";
 import stripJsonComments from "strip-json-comments";
 import {
-  KeyBinding,
-  isKeyBindingSource,
-  generateKeybindings,
-  generateKeybindingsForPrefixArgument,
-  generateKeybindingsForTypeCharInRectMarkMode,
+    KeyBinding,
+    isKeyBindingSource,
+    generateKeybindings,
+    generateKeybindingsForPrefixArgument,
+    generateKeybindingsForTypeCharInRectMarkMode,
 } from "./generate-keybindings";
 
 const srcFilePath = "./keybindings.json";
@@ -19,24 +19,28 @@ const keybindingSrcs: Array<any> = srcJSON["keybindings"];
 let dstKeybindings: KeyBinding[] = [];
 
 keybindingSrcs.forEach((keybindingSrc) => {
-  // XXX: Escape hatch for prefix argument keybindings.
-  if (keybindingSrc.$special === "universalArgumentTypes") {
-    console.log("Adding keybindings for types following universal argument");
-    dstKeybindings.push(...generateKeybindingsForPrefixArgument());
-    return;
-  }
-  if (keybindingSrc.$special === "rectMarkModeTypes") {
-    console.log("Adding keybindings for types in rectangle-mark-mode");
-    dstKeybindings.push(...generateKeybindingsForTypeCharInRectMarkMode());
-    return;
-  }
+    // XXX: Escape hatch for prefix argument keybindings.
+    if (keybindingSrc.$special === "universalArgumentTypes") {
+        console.log(
+            "Adding keybindings for types following universal argument"
+        );
+        dstKeybindings.push(...generateKeybindingsForPrefixArgument());
+        return;
+    }
+    if (keybindingSrc.$special === "rectMarkModeTypes") {
+        console.log("Adding keybindings for types in rectangle-mark-mode");
+        dstKeybindings.push(...generateKeybindingsForTypeCharInRectMarkMode());
+        return;
+    }
 
-  if (!isKeyBindingSource(keybindingSrc)) {
-    throw new Error(`${JSON.stringify(keybindingSrc)} is not a valid source`);
-  }
+    if (!isKeyBindingSource(keybindingSrc)) {
+        throw new Error(
+            `${JSON.stringify(keybindingSrc)} is not a valid source`
+        );
+    }
 
-  const keybindings = generateKeybindings(keybindingSrc);
-  dstKeybindings = dstKeybindings.concat(keybindings);
+    const keybindings = generateKeybindings(keybindingSrc);
+    dstKeybindings = dstKeybindings.concat(keybindings);
 });
 
 console.info(`Reading ${packageDotJsonPath} ...`);
@@ -45,4 +49,7 @@ const packageJson = JSON.parse(packageJsonContent);
 
 console.info(`Overwriting ${packageDotJsonPath} ...`);
 packageJson["contributes"]["keybindings"] = dstKeybindings;
-fs.writeFileSync(packageDotJsonPath, JSON.stringify(packageJson, null, "\t") + "\n");
+fs.writeFileSync(
+    packageDotJsonPath,
+    JSON.stringify(packageJson, null, "\t") + "\n"
+);
