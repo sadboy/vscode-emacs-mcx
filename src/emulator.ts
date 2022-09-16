@@ -53,6 +53,14 @@ export class EmacsEmulator implements vscode.Disposable {
     return this.hasNonEmptySelection();
   }
 
+  public getRegion(): Selection[] {
+    if (!this.mark) {
+      return [];
+    } else {
+      return this.mark.toAnchor(this.textEditor.selections);
+    }
+  }
+
   private rectMode = false;
   public get inRectMarkMode(): boolean {
     return this._isMarkActive && this.rectMode;

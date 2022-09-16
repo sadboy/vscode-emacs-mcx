@@ -7,7 +7,7 @@ import { Configuration } from "../configuration/configuration";
 import { WordCharacterClassifier, getMapForWordSeparators } from "vs/editor/common/controller/wordCharacterClassifier";
 import { findNextWordEnd, findPreviousWordStart } from "./helpers/wordOperations";
 import { revealPrimaryActive } from "./helpers/reveal";
-import { getNonEmptySelections, makeSelectionsEmpty } from "./helpers/selection";
+import { getNonEmptySelections } from "./helpers/selection";
 
 function getWordSeparators(): WordCharacterClassifier {
   // Ref: https://github.com/VSCodeVim/Vim/blob/91ca71f8607458c0558f9aff61e230c6917d4b51/src/configuration/configuration.ts#L155
@@ -171,10 +171,9 @@ export class KillRegion extends KillYankCommand {
     if (selectionsAfterRectDisabled) {
       textEditor.selections = selectionsAfterRectDisabled;
     }
-    revealPrimaryActive(textEditor);
-
     this.emacsController.deactivateMark();
     this.killYanker.cancelKillAppend();
+    revealPrimaryActive(textEditor);
   }
 }
 
@@ -185,11 +184,11 @@ export class CopyRegion extends KillYankCommand {
   public async execute(
     textEditor: TextEditor, isInMarkMode: boolean, prefixArgument: number | undefined
   ): Promise<void> {
-    const ranges = getNonEmptySelections(textEditor);
+    const controller = this.emacsController;
+    const ranges = controller.getRegion().filter((selection) => !selection.isEmpty);
     await this.killYanker.copy(ranges);
     this.emacsController.deactivateMark();
     this.killYanker.cancelKillAppend();
-    makeSelectionsEmpty(textEditor);
     revealPrimaryActive(textEditor);
   }
 }
