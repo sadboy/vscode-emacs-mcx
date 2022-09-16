@@ -13,7 +13,6 @@ import {
     findPreviousWordStart,
 } from "./helpers/wordOperations";
 import { revealPrimaryActive } from "./helpers/reveal";
-import { getNonEmptySelections } from "./helpers/selection";
 
 function getWordSeparators(): WordCharacterClassifier {
     // Ref: https://github.com/VSCodeVim/Vim/blob/91ca71f8607458c0558f9aff61e230c6917d4b51/src/configuration/configuration.ts#L155
@@ -211,22 +210,11 @@ export class KillRegion extends KillYankCommand {
         isInMarkMode: boolean,
         prefixArgument: number | undefined
     ): Promise<void> {
-        const selectionsAfterRectDisabled =
-            this.emacsController.inRectMarkMode &&
-            this.emacsController.nativeSelections.map((selection) => {
-                const newLine = selection.active.line;
-                const newChar = Math.min(
-                    selection.active.character,
-                    selection.anchor.character
-                );
-                return new vscode.Selection(newLine, newChar, newLine, newChar);
-            });
-
-        const ranges = getNonEmptySelections(textEditor);
+        const controller = this.emacsController;
+        const ranges = controller
+            .getRegion()
+            .filter((selection) => !selection.isEmpty);
         await this.killYanker.kill(ranges);
-        if (selectionsAfterRectDisabled) {
-            textEditor.selections = selectionsAfterRectDisabled;
-        }
         this.emacsController.deactivateMark();
         this.killYanker.cancelKillAppend();
         revealPrimaryActive(textEditor);
@@ -261,7 +249,7 @@ export class Yank extends KillYankCommand {
         isInMarkMode: boolean,
         prefixArgument: number | undefined
     ): Promise<void> {
-        await this.emacsController.pushMark();
+        this.emacsController.pushMark();
         await this.killYanker.yank();
         this.emacsController.deactivateMark();
         revealPrimaryActive(textEditor);

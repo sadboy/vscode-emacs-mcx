@@ -848,54 +848,6 @@
       "command": "emacs-mcx.rectangleMarkMode",
       "when": "editorTextFocus"
     },
-    {
-      "key": "ctrl+x r",
-      "command": "emacs-mcx.startRectCommand",
-      "when": "editorTextFocus"
-    },
-    {
-      "key": "k", // ctrl+x r k
-      "command": "emacs-mcx.killRectangle",
-      "when": "emacs-mcx.acceptingRectCommand && editorTextFocus"
-    },
-    {
-      "key": "y", // ctrl+x r y
-      "command": "emacs-mcx.yankRectangle",
-      "when": "emacs-mcx.acceptingRectCommand && editorTextFocus"
-    },
-    {
-      "key": "d", // ctrl+x r d
-      "command": "emacs-mcx.deleteRectangle",
-      "when": "emacs-mcx.acceptingRectCommand && editorTextFocus"
-    },
-    {
-      "key": "meta+w", // ctrl+x r M-w
-      "command": "emacs-mcx.copyRectangleAsKill",
-      "when": "emacs-mcx.acceptingRectCommand && editorTextFocus"
-    },
-    {
-      "key": "o", // ctrl+x r o
-      "command": "emacs-mcx.openRectangle",
-      "when": "emacs-mcx.acceptingRectCommand && editorTextFocus"
-    },
-    {
-      "key": "c", // ctrl+x r c
-      "command": "emacs-mcx.clearRectangle",
-      "when": "emacs-mcx.acceptingRectCommand && editorTextFocus"
-    },
-    {
-      "key": "t", // ctrl+x r t
-      "command": "emacs-mcx.stringRectangle",
-      "when": "emacs-mcx.acceptingRectCommand && editorTextFocus"
-    },
-    {
-      "key": "p", // ctrl+x r p
-      "command": "emacs-mcx.replaceKillRingToRectangle",
-      "when": "emacs-mcx.acceptingRectCommand && editorTextFocus"
-    },
-    {
-      "$special": "rectMarkModeTypes"
-    },
     // Suggestion
     {
       "key": "ctrl+'",

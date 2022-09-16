@@ -10,13 +10,11 @@ import * as FindCommands from "./find";
 import * as KillCommands from "./kill";
 import * as MoveCommands from "./move";
 import * as PareditCommands from "./paredit";
-import * as RectangleCommands from "./rectangle";
 import { RecenterTopBottom } from "./recenter";
 import { EmacsEmulator } from "src/emulator";
 import {
     ExchangePointAndMarkCommand,
     PopMarkCommand,
-    RectangleMarkModeCommand,
     SetMarkCommand,
 } from "./mark";
 
@@ -25,7 +23,6 @@ const _CommandRegister = new Map(
         SetMarkCommand,
         PopMarkCommand,
         ExchangePointAndMarkCommand,
-        RectangleMarkModeCommand,
 
         MoveCommands.RevealDefinition,
         MoveCommands.RevealReference,
@@ -66,15 +63,6 @@ const _CommandRegister = new Map(
         KillCommands.CopyRegion,
         KillCommands.Yank,
         KillCommands.YankPop,
-        RectangleCommands.StartAcceptingRectCommand,
-        RectangleCommands.KillRectangle,
-        RectangleCommands.CopyRectangleAsKill,
-        RectangleCommands.DeleteRectangle,
-        RectangleCommands.YankRectangle,
-        RectangleCommands.OpenRectangle,
-        RectangleCommands.ClearRectangle,
-        RectangleCommands.StringRectangle,
-        RectangleCommands.ReplaceKillRingToRectangle,
         PareditCommands.ForwardSexp,
         PareditCommands.BackwardSexp,
         PareditCommands.ForwardDownSexp,

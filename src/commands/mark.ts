@@ -73,15 +73,3 @@ export class ExchangePointAndMarkCommand extends EmacsCommand {
         return this.emacsController.exchangePointAndMark();
     }
 }
-
-export class RectangleMarkModeCommand extends EmacsCommand {
-    public static readonly id = "rectangleMarkMode";
-
-    public execute(
-        textEditor: vscode.TextEditor,
-        isInMarkMode: boolean,
-        prefixArgument: number | undefined
-    ): void | Thenable<unknown> {
-        throw new Error("Method not implemented.");
-    }
-}
