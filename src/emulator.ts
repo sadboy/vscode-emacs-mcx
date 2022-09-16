@@ -2,7 +2,6 @@ import * as vscode from "vscode";
 import { Selection, TextEditor } from "vscode";
 import { instanceOfIEmacsCommandInterrupted } from "./commands";
 import { EmacsCommandRegistry } from "./commands/registry";
-import { EditorIdentity } from "./editorIdentity";
 import { KillYanker } from "./kill-yank";
 import { KillRing } from "./kill-yank/kill-ring";
 import { logger } from "./logger";
@@ -25,7 +24,7 @@ export interface RectangleState {
 }
 
 export class EmacsEmulator implements vscode.Disposable {
-  private textEditor: TextEditor;
+  private readonly textEditor: TextEditor;
 
   private commandRegistry: EmacsCommandRegistry;
 
@@ -132,14 +131,8 @@ export class EmacsEmulator implements vscode.Disposable {
     this.killRing = killRing;
     this.searchState = { startSelections: undefined, };
     this.killYanker = new KillYanker(textEditor, killRing, minibuffer);
-    this.registerDisposable(this.killYanker);
 
     this.rectangleState = { latestKilledRectangle: [], };
-  }
-
-  public setTextEditor(textEditor: TextEditor): void {
-    this.textEditor = textEditor;
-    this.killYanker.setTextEditor(textEditor);
   }
 
   public getTextEditor(): TextEditor {
@@ -157,18 +150,20 @@ export class EmacsEmulator implements vscode.Disposable {
   }
 
   public onDidChangeTextDocument(e: vscode.TextDocumentChangeEvent): void {
-    // XXX: Is this a correct way to check the identity of document?
-    if (e.document.uri.toString() === this.textEditor.document.uri.toString()) {
-      if (
-        e.contentChanges.some((contentChange) =>
-          this.textEditor.selections.some(
-            (selection) => typeof contentChange.range.intersection(selection) !== "undefined"
-          )
-        )
-      ) {
-        this.deactivateMark(false);
-      }
+    if (e.document.uri.toString() !== this.textEditor.document.uri.toString()) {
+      return;
     }
+
+    if (
+      e.contentChanges.some((contentChange) =>
+        this.textEditor.selections.some(
+          (selection) => typeof contentChange.range.intersection(selection) !== "undefined"
+        )
+      )
+    ) {
+      this.deactivateMark(false);
+    }
+    this.killYanker.onDidChangeTextDocument();
   }
 
   private _hasSelectionStateChanged(): boolean {
@@ -192,15 +187,18 @@ export class EmacsEmulator implements vscode.Disposable {
   }
 
   public onDidChangeTextEditorSelection(e: vscode.TextEditorSelectionChangeEvent): void {
-    if (new EditorIdentity(e.textEditor).isEqual(new EditorIdentity(this.textEditor))) {
-      if (!this._isInCommand && this._hasSelectionStateChanged()) {
-        // Editor state was modified by forces beyond our control:
-        this.thisCommand = undefined;
-        this._syncMarkAndSelection();
-      }
-      // TODO: remove:
-      this.onDidInterruptTextEditor();
+    if (e.textEditor !== this.textEditor) {
+      return;
     }
+
+    if (!this._isInCommand && this._hasSelectionStateChanged()) {
+      // Editor state was modified by forces beyond our control:
+      this.thisCommand = undefined;
+      this._syncMarkAndSelection();
+    }
+    this.killYanker.onDidChangeTextEditorSelection();
+    // TODO: remove:
+    this.onDidInterruptTextEditor();
   }
 
   private _syncMarkAndSelection(): void {

@@ -26,37 +26,19 @@ export function activate(context: vscode.ExtensionContext): void {
   const minibuffer = new InputBoxMinibuffer();
 
   const emulatorMap = new EmacsEmulatorMap(killRing, minibuffer);
+  context.subscriptions.push(emulatorMap);
 
   function getAndUpdateEmulator() {
     const activeTextEditor = vscode.window.activeTextEditor;
-    if (typeof activeTextEditor === "undefined") {
+    if (activeTextEditor === undefined) {
       return undefined;
+    } else {
+      return emulatorMap.getOrCreate(activeTextEditor);
     }
-
-    const [curEmulator, isNew] = emulatorMap.getOrCreate(activeTextEditor);
-    if (isNew) {
-      context.subscriptions.push(curEmulator);
-    }
-
-    return curEmulator;
   }
 
   context.subscriptions.push(
-    vscode.workspace.onDidCloseTextDocument(() => {
-      const documents = vscode.workspace.textDocuments;
-
-      // Delete emulators once all tabs of this document have been closed
-      for (const key of emulatorMap.getKeys()) {
-        const emulator = emulatorMap.get(key);
-        if (
-          emulator === undefined ||
-          emulator.getTextEditor() === undefined ||
-          documents.indexOf(emulator.getTextEditor().document) === -1
-        ) {
-          emulatorMap.delete(key);
-        }
-      }
-    })
+    vscode.workspace.onDidCloseTextDocument(() => emulatorMap.cleanup())
   );
 
   context.subscriptions.push(
@@ -176,6 +158,6 @@ export function activate(context: vscode.ExtensionContext): void {
 }
 
 // this method is called when your extension is deactivated
-export function deactivate() {
+export function deactivate(): void {
   return;
 }

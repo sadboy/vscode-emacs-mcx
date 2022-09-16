@@ -1,48 +1,46 @@
-import { TextEditor } from "vscode";
-import { EditorIdentity } from "./editorIdentity";
+import { Disposable, TextEditor } from "vscode";
 import { EmacsEmulator } from "./emulator";
 import { KillRing } from "./kill-yank/kill-ring";
 import { Minibuffer } from "./minibuffer";
 
-export class EmacsEmulatorMap {
-  private emacsEmulatorMap: Map<string, EmacsEmulator>;
+export class EmacsEmulatorMap implements Disposable {
+  private emulatorMap: Map<TextEditor, EmacsEmulator>;
   private killRing: KillRing;
   private minibuffer: Minibuffer;
 
   constructor(killRing: KillRing, minibuffer: Minibuffer) {
-    this.emacsEmulatorMap = new Map();
+    this.emulatorMap = new Map();
     this.killRing = killRing;
     this.minibuffer = minibuffer;
   }
 
-  public getOrCreate(textEditor: TextEditor): [EmacsEmulator, boolean] {
-    const id = new EditorIdentity(textEditor);
-    const key = id.toString();
+  dispose(): void {
+    for (const emulator of this.emulatorMap.values()) {
+      emulator.dispose();
+    }
+  }
 
-    const existentEmulator = this.emacsEmulatorMap.get(key);
+  public getOrCreate(textEditor: TextEditor): EmacsEmulator {
+    const existentEmulator = this.emulatorMap.get(textEditor);
     if (existentEmulator) {
-      existentEmulator.setTextEditor(textEditor);
-      return [existentEmulator, false];
+      return existentEmulator;
     }
 
     const newEmulator = new EmacsEmulator(textEditor, this.killRing, this.minibuffer);
-    this.emacsEmulatorMap.set(key, newEmulator);
-    return [newEmulator, true];
+    this.emulatorMap.set(textEditor, newEmulator);
+    return newEmulator;
   }
 
-  public get(key: string) {
-    return this.emacsEmulatorMap.get(key);
+  public get(editor: TextEditor): EmacsEmulator | undefined {
+    return this.emulatorMap.get(editor);
   }
 
-  public getKeys() {
-    return this.emacsEmulatorMap.keys();
-  }
-
-  public delete(key: string) {
-    const emulator = this.emacsEmulatorMap.get(key);
-    if (emulator) {
-      emulator.dispose();
+  public cleanup(): void {
+    for (const [editor, emulator] of this.emulatorMap) {
+      if (editor.document.isClosed) {
+        this.emulatorMap.delete(editor);
+        emulator.dispose();
+      }
     }
-    return this.emacsEmulatorMap.delete(key);
   }
 }
