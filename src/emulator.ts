@@ -38,7 +38,9 @@ export class EmacsEmulator implements vscode.Disposable {
     }
 
     public get isRegionActive(): boolean {
-        return this.hasNonEmptySelection();
+        return this.textEditor.selections.some(
+            (selection) => !selection.isEmpty
+        );
     }
 
     public getRegion(): Selection[] {
@@ -113,10 +115,8 @@ export class EmacsEmulator implements vscode.Disposable {
 
         if (
             e.contentChanges.some((contentChange) =>
-                this.textEditor.selections.some(
-                    (selection) =>
-                        typeof contentChange.range.intersection(selection) !==
-                        "undefined"
+                this.textEditor.selections.some((selection) =>
+                    contentChange.range.intersection(selection)
                 )
             )
         ) {
@@ -352,14 +352,10 @@ export class EmacsEmulator implements vscode.Disposable {
     public cancel(): void {
         this.thisCommand = "cancel";
 
-        if (this.hasMultipleSelections() && !this.hasNonEmptySelection()) {
-            this.stopMultiCursor();
-        } else {
-            this.deactivateRegion();
-        }
-
-        if (this.isMarkActive) {
+        if (this.isMarkActive || this.isRegionActive) {
             this.deactivateMark();
+        } else {
+            this.cancelMultiCursor();
         }
 
         this.onDidInterruptTextEditor();
@@ -465,18 +461,8 @@ export class EmacsEmulator implements vscode.Disposable {
         );
     }
 
-    private stopMultiCursor() {
-        vscode.commands.executeCommand("removeSecondaryCursors");
-    }
-
-    private hasMultipleSelections(): boolean {
-        return this.textEditor.selections.length > 1;
-    }
-
-    private hasNonEmptySelection(): boolean {
-        return this.textEditor.selections.some(
-            (selection) => !selection.isEmpty
-        );
+    private cancelMultiCursor() {
+        this.textEditor.selections = [this.textEditor.selection];
     }
 
     private afterCommand() {
