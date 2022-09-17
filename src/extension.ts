@@ -3,7 +3,7 @@ import { CommandRegister } from "./commands/registry";
 import { Configuration } from "./configuration/configuration";
 import { WorkspaceConfigCache } from "./workspace-configuration";
 import { EmacsEmulator } from "./emulator";
-import { EmacsEmulatorMap } from "./emulator-map";
+import { EmacsEmulatorManager } from "./emulator-map";
 import { executeCommands } from "./execute-commands";
 import { KillRing } from "./kill-yank/kill-ring";
 import { logger } from "./logger";
@@ -28,20 +28,14 @@ export function activate(context: vscode.ExtensionContext): void {
     const killRing = new KillRing(Configuration.instance.killRingMax);
     const minibuffer = new InputBoxMinibuffer();
 
-    const emulatorMap = new EmacsEmulatorMap(killRing, minibuffer);
+    const emulatorMap = new EmacsEmulatorManager(killRing, minibuffer);
     context.subscriptions.push(emulatorMap);
 
-    function getAndUpdateEmulator() {
-        const activeTextEditor = vscode.window.activeTextEditor;
-        if (activeTextEditor === undefined) {
-            return undefined;
-        } else {
-            return emulatorMap.getOrCreate(activeTextEditor);
-        }
-    }
-
     context.subscriptions.push(
-        vscode.workspace.onDidCloseTextDocument(() => emulatorMap.cleanup())
+        vscode.workspace.onDidCloseTextDocument(
+            emulatorMap.onDidCloseTextDocument,
+            emulatorMap
+        )
     );
 
     context.subscriptions.push(
@@ -51,6 +45,15 @@ export function activate(context: vscode.ExtensionContext): void {
             }
         })
     );
+
+    function getEmulator() {
+        const activeTextEditor = vscode.window.activeTextEditor;
+        if (activeTextEditor === undefined) {
+            return undefined;
+        } else {
+            return emulatorMap.getOrCreate(activeTextEditor);
+        }
+    }
 
     function registerEmulatorCommand(
         commandName: string,
@@ -64,7 +67,7 @@ export function activate(context: vscode.ExtensionContext): void {
                     `[command]\t Command "${commandName}" executed with args (${args})`
                 );
 
-                const emulator = getAndUpdateEmulator();
+                const emulator = getEmulator();
                 if (!emulator) {
                     if (typeof onNoEmulator === "function") {
                         return onNoEmulator(...args);
