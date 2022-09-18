@@ -96,7 +96,7 @@ export class MarkSexp extends EmacsCommand {
     public static readonly id = "paredit.markSexp";
 
     private get continuing(): boolean {
-        return this.emacsController.lastCommand == MarkSexp.id;
+        return this.emacs.lastCommand == MarkSexp.id;
     }
 
     public async execute(
@@ -104,7 +104,7 @@ export class MarkSexp extends EmacsCommand {
         isInMarkMode: boolean,
         prefixArgument: number | undefined
     ): Promise<void> {
-        const controller: EmacsEmulator = this.emacsController;
+        const controller: EmacsEmulator = this.emacs;
         const arg = prefixArgument === undefined ? 1 : prefixArgument;
 
         const repeat = Math.abs(arg);

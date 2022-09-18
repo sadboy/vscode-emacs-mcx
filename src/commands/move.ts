@@ -35,8 +35,8 @@ export class RevealDefinition extends EmacsCommand {
         isInMarkMode: boolean,
         prefixArgument: number | undefined
     ): Promise<unknown> {
-        this.emacsController.deactivateMark();
-        this.emacsController.pushMark();
+        this.emacs.deactivateMark();
+        this.emacs.pushMark();
         return vscode.commands.executeCommand("editor.action.revealDefinition");
     }
 }
@@ -49,8 +49,8 @@ export class RevealReference extends EmacsCommand {
         isInMarkMode: boolean,
         prefixArgument: number | undefined
     ): Promise<unknown> {
-        this.emacsController.deactivateMark();
-        this.emacsController.pushMark();
+        this.emacs.deactivateMark();
+        this.emacs.pushMark();
         return vscode.commands.executeCommand("revealReference");
     }
 }
@@ -305,7 +305,7 @@ export class BeginningOfBuffer extends EmacsCommand {
         prefixArgument: number | undefined
     ): Promise<void> {
         if (!isInMarkMode) {
-            this.emacsController.pushMark();
+            this.emacs.pushMark();
         }
         return vscode.commands.executeCommand<void>(
             isInMarkMode ? "cursorTopSelect" : "cursorTop"
@@ -322,7 +322,7 @@ export class EndOfBuffer extends EmacsCommand {
         prefixArgument: number | undefined
     ): Promise<void> {
         if (!isInMarkMode) {
-            this.emacsController.pushMark();
+            this.emacs.pushMark();
         }
         return vscode.commands.executeCommand<void>(
             isInMarkMode ? "cursorBottomSelect" : "cursorBottom"
@@ -347,7 +347,7 @@ export class ScrollUpCommand extends EmacsCommand {
                     by: "page",
                 });
 
-                if (!this.emacsController.isCursorVisible()) {
+                if (!this.emacs.isCursorVisible()) {
                     await vscode.commands.executeCommand<void>("cursorMove", {
                         to: "viewPortTop",
                         select: isInMarkMode,
@@ -393,7 +393,7 @@ export class ScrollDownCommand extends EmacsCommand {
                     by: "page",
                 });
 
-                if (!this.emacsController.isCursorVisible()) {
+                if (!this.emacs.isCursorVisible()) {
                     await vscode.commands.executeCommand<void>("cursorMove", {
                         to: "viewPortBottom",
                         select: isInMarkMode,

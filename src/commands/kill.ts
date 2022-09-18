@@ -174,7 +174,7 @@ export class KillLine extends KillYankCommand {
                 return new Range(cursor, lineEnd);
             }
         });
-        this.emacsController.deactivateMark();
+        this.emacs.deactivateMark();
         await this.killYanker.kill(ranges);
         return revealPrimaryActive(textEditor);
     }
@@ -196,7 +196,7 @@ export class KillWholeLine extends KillYankCommand {
                     new Position(selection.active.line + 1, 0)
                 )
         );
-        this.emacsController.deactivateMark();
+        this.emacs.deactivateMark();
         await this.killYanker.kill(ranges);
         return revealPrimaryActive(textEditor);
     }
@@ -210,12 +210,12 @@ export class KillRegion extends KillYankCommand {
         isInMarkMode: boolean,
         prefixArgument: number | undefined
     ): Promise<void> {
-        const controller = this.emacsController;
+        const controller = this.emacs;
         const ranges = controller
             .getRegion()
             .filter((selection) => !selection.isEmpty);
         await this.killYanker.kill(ranges);
-        this.emacsController.deactivateMark();
+        this.emacs.deactivateMark();
         this.killYanker.cancelKillAppend();
         revealPrimaryActive(textEditor);
     }
@@ -230,12 +230,12 @@ export class CopyRegion extends KillYankCommand {
         isInMarkMode: boolean,
         prefixArgument: number | undefined
     ): Promise<void> {
-        const controller = this.emacsController;
+        const controller = this.emacs;
         const ranges = controller
             .getRegion()
             .filter((selection) => !selection.isEmpty);
         await this.killYanker.copy(ranges);
-        this.emacsController.deactivateMark();
+        this.emacs.deactivateMark();
         this.killYanker.cancelKillAppend();
         revealPrimaryActive(textEditor);
     }
@@ -249,9 +249,9 @@ export class Yank extends KillYankCommand {
         isInMarkMode: boolean,
         prefixArgument: number | undefined
     ): Promise<void> {
-        this.emacsController.pushMark();
+        this.emacs.pushMark();
         await this.killYanker.yank();
-        this.emacsController.deactivateMark();
+        this.emacs.deactivateMark();
         revealPrimaryActive(textEditor);
     }
 }
@@ -265,7 +265,7 @@ export class YankPop extends KillYankCommand {
         prefixArgument: number | undefined
     ): Promise<void> {
         await this.killYanker.yankPop();
-        this.emacsController.deactivateMark();
+        this.emacs.deactivateMark();
         revealPrimaryActive(textEditor);
     }
 }

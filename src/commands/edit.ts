@@ -40,7 +40,7 @@ export class NewLine extends EmacsCommand {
         isInMarkMode: boolean,
         prefixArgument: number | undefined
     ): Promise<void[]> {
-        this.emacsController.deactivateMark();
+        this.emacs.deactivateMark();
 
         const repeat = prefixArgument === undefined ? 1 : prefixArgument;
         return createParallel(repeat, () =>

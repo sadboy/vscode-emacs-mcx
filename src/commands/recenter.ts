@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { TextEditor, TextEditorRevealType } from "vscode";
-import { EmacsCommand, IEmacsCommandInterrupted } from ".";
+import { EmacsCommand } from ".";
 
 enum RecenterPosition {
     Middle,
@@ -8,10 +8,7 @@ enum RecenterPosition {
     Bottom,
 }
 
-export class RecenterTopBottom
-    extends EmacsCommand
-    implements IEmacsCommandInterrupted
-{
+export class RecenterTopBottom extends EmacsCommand {
     public static readonly id = "recenterTopBottom";
 
     private recenterPosition: RecenterPosition = RecenterPosition.Middle;
@@ -21,6 +18,10 @@ export class RecenterTopBottom
         isInMarkMode: boolean,
         prefixArgument: number | undefined
     ): Promise<void> {
+        if (this.emacs.lastCommand !== RecenterTopBottom.id) {
+            this.recenterPosition = RecenterPosition.Middle;
+        }
+
         const activeRange = new vscode.Range(
             textEditor.selection.active,
             textEditor.selection.active
@@ -64,9 +65,5 @@ export class RecenterTopBottom
                 break;
             }
         }
-    }
-
-    public onDidInterruptTextEditor(): void {
-        this.recenterPosition = RecenterPosition.Middle;
     }
 }

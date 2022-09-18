@@ -202,7 +202,7 @@ export class IsearchExit extends IsearchCommand {
         ...args: unknown[]
     ): Promise<void> {
         if (this.searchState.startSelections) {
-            this.emacsController.pushMark(
+            this.emacs.pushMark(
                 Marker.fromAnchor(this.searchState.startSelections),
                 true
             );

@@ -11,17 +11,17 @@ export function createParallel<T>(
 export abstract class EmacsCommand {
     public static readonly id: string;
 
-    protected emacsController: EmacsEmulator;
+    protected emacs: EmacsEmulator;
 
     public constructor(controller: EmacsEmulator) {
-        this.emacsController = controller;
+        this.emacs = controller;
     }
 
     public async run(...args: unknown[]): Promise<unknown> {
         return this.execute(
-            this.emacsController.editor,
-            this.emacsController.isMarkActive,
-            this.emacsController.prefixArgumentHandler.getPrefixArgument(),
+            this.emacs.editor,
+            this.emacs.isMarkActive,
+            this.emacs.prefixArgumentHandler.getPrefixArgument(),
             ...args
         );
     }
@@ -32,14 +32,4 @@ export abstract class EmacsCommand {
         prefixArgument: number | undefined,
         ...args: unknown[]
     ): Promise<unknown>;
-}
-
-export interface IEmacsCommandInterrupted {
-    onDidInterruptTextEditor(): void;
-}
-
-export function instanceOfIEmacsCommandInterrupted(
-    obj: any
-): obj is IEmacsCommandInterrupted {
-    return typeof obj.onDidInterruptTextEditor === "function";
 }

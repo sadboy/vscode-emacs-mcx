@@ -1,6 +1,5 @@
 import * as vscode from "vscode";
 import { Selection, TextDocument, TextEditor } from "vscode";
-import { instanceOfIEmacsCommandInterrupted } from "./commands";
 import { EmacsCommandRegistry } from "./commands/registry";
 import { KillYanker } from "./kill-yank";
 import { KillRing } from "./kill-yank/kill-ring";
@@ -143,8 +142,6 @@ export class EmacsEmulator {
             }
         }
         this.killYanker.onDidChangeTextEditorSelection();
-        // TODO: remove:
-        this.onDidInterruptTextEditor();
     }
 
     public attachEditor(textEditor: TextEditor): void {
@@ -323,7 +320,7 @@ export class EmacsEmulator {
 
     public async runCommand(
         commandName: string,
-        ...args: any[]
+        ...args: unknown[]
     ): Promise<void> {
         const command = this.commandRegistry.get(commandName);
 
@@ -355,8 +352,6 @@ export class EmacsEmulator {
         } else {
             this.cancelMultiCursor();
         }
-
-        this.onDidInterruptTextEditor();
 
         this.killYanker.cancelKillAppend();
         this.prefixArgumentHandler.cancel();
@@ -472,15 +467,6 @@ export class EmacsEmulator {
 
     private afterCommand() {
         return this.prefixArgumentHandler.cancel();
-    }
-
-    private onDidInterruptTextEditor() {
-        this.commandRegistry.forEach((command) => {
-            if (instanceOfIEmacsCommandInterrupted(command)) {
-                // TODO: Cache the array of IEmacsCommandInterrupted instances
-                command.onDidInterruptTextEditor();
-            }
-        });
     }
 
     private _editor: TextEditor;

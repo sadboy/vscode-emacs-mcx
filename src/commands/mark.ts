@@ -11,7 +11,7 @@ export class SetMarkCommand extends EmacsCommand {
         isInMarkMode: boolean,
         prefixArgument: number | undefined
     ): Promise<unknown> {
-        const controller: EmacsEmulator = this.emacsController;
+        const controller: EmacsEmulator = this.emacs;
 
         if (
             controller.prefixArgumentHandler.precedingSingleCtrlU() ||
@@ -42,7 +42,7 @@ export class PopMarkCommand extends EmacsCommand {
         isInMarkMode: boolean,
         prefixArgument: number | undefined
     ): Promise<void> {
-        const controller = this.emacsController;
+        const controller = this.emacs;
 
         if (isInMarkMode) {
             controller.deactivateMark();
@@ -66,10 +66,10 @@ export class ExchangePointAndMarkCommand extends EmacsCommand {
         isInMarkMode: boolean,
         prefixArgument: number | undefined
     ): Promise<void> {
-        const controller = this.emacsController;
+        const controller = this.emacs;
         if (controller.prefixArgumentHandler.precedingSingleCtrlU()) {
             controller.activateMark();
         }
-        return this.emacsController.exchangePointAndMark();
+        return this.emacs.exchangePointAndMark();
     }
 }
