@@ -87,7 +87,7 @@ export class MarkRing {
             this.ring[0] = mark;
             this.pointer = 0;
         } else if (force || !top.isEqual(mark)) {
-            assert(this.pointer);
+            assert(this.pointer !== undefined);
             if (replace) {
                 this.ring[this.pointer] = mark;
             } else {
