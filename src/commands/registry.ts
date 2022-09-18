@@ -1,8 +1,4 @@
 import { EmacsCommand } from ".";
-import {
-    AddSelectionToNextFindMatch,
-    AddSelectionToPreviousFindMatch,
-} from "./add-selection-to-find-match";
 import * as CaseCommands from "./case";
 import { DeleteBlankLines } from "./delete-blank-lines";
 import * as EditCommands from "./edit";
@@ -73,8 +69,6 @@ const _CommandRegister = new Map(
         CaseCommands.TransformToUppercase,
         CaseCommands.TransformToLowercase,
         CaseCommands.TransformToTitlecase,
-        AddSelectionToNextFindMatch,
-        AddSelectionToPreviousFindMatch,
     ].map((item) => [item.id, item])
 );
 
