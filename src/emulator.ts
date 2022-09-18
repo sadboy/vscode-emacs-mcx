@@ -457,6 +457,13 @@ export class EmacsEmulator {
         );
     }
 
+    public isCursorVisible(): boolean {
+        const cursor = this.editor.selection.active;
+        return this.editor.visibleRanges.some((range) =>
+            range.contains(cursor)
+        );
+    }
+
     private cancelMultiCursor() {
         this._editor.selections = [this._editor.selection];
     }

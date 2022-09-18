@@ -342,38 +342,37 @@ export class ScrollUpCommand extends EmacsCommand {
 
         if (repeat === 1) {
             if (Configuration.instance.strictEmacsMove) {
-                return vscode.commands
-                    .executeCommand<void>("editorScroll", {
-                        to: "down",
-                        by: "page",
-                    })
-                    .then(() =>
-                        vscode.commands.executeCommand<void>("cursorMove", {
-                            to: "viewPortTop",
-                            select: isInMarkMode,
-                        })
-                    )
-                    .then(() =>
-                        vscode.commands.executeCommand<void>("cursorMove", {
-                            to: "wrappedLineStart",
-                            select: isInMarkMode,
-                        })
-                    );
+                await vscode.commands.executeCommand<void>("editorScroll", {
+                    to: "down",
+                    by: "page",
+                });
+
+                if (!this.emacsController.isCursorVisible()) {
+                    await vscode.commands.executeCommand<void>("cursorMove", {
+                        to: "viewPortTop",
+                        select: isInMarkMode,
+                    });
+
+                    return vscode.commands.executeCommand<void>("cursorMove", {
+                        to: "wrappedLineStart",
+                        select: isInMarkMode,
+                    });
+                }
             } else {
                 return vscode.commands.executeCommand<void>(
                     isInMarkMode ? "cursorPageDownSelect" : "cursorPageDown"
                 );
             }
+        } else {
+            return vscode.commands
+                .executeCommand<void>("cursorMove", {
+                    to: "down",
+                    by: "wrappedLine",
+                    value: repeat,
+                    select: isInMarkMode,
+                })
+                .then(() => revealPrimaryActive(textEditor));
         }
-
-        return vscode.commands
-            .executeCommand<void>("cursorMove", {
-                to: "down",
-                by: "wrappedLine",
-                value: repeat,
-                select: isInMarkMode,
-            })
-            .then(() => revealPrimaryActive(textEditor));
     }
 }
 
@@ -389,38 +388,37 @@ export class ScrollDownCommand extends EmacsCommand {
 
         if (repeat === 1) {
             if (Configuration.instance.strictEmacsMove) {
-                return vscode.commands
-                    .executeCommand<void>("editorScroll", {
-                        to: "up",
-                        by: "page",
-                    })
-                    .then(() =>
-                        vscode.commands.executeCommand<void>("cursorMove", {
-                            to: "viewPortBottom",
-                            select: isInMarkMode,
-                        })
-                    )
-                    .then(() =>
-                        vscode.commands.executeCommand<void>("cursorMove", {
-                            to: "wrappedLineStart",
-                            select: isInMarkMode,
-                        })
-                    );
+                await vscode.commands.executeCommand<void>("editorScroll", {
+                    to: "up",
+                    by: "page",
+                });
+
+                if (!this.emacsController.isCursorVisible()) {
+                    await vscode.commands.executeCommand<void>("cursorMove", {
+                        to: "viewPortBottom",
+                        select: isInMarkMode,
+                    });
+
+                    return vscode.commands.executeCommand<void>("cursorMove", {
+                        to: "wrappedLineStart",
+                        select: isInMarkMode,
+                    });
+                }
             } else {
                 return vscode.commands.executeCommand<void>(
                     isInMarkMode ? "cursorPageUpSelect" : "cursorPageUp"
                 );
             }
+        } else {
+            return vscode.commands
+                .executeCommand<void>("cursorMove", {
+                    to: "up",
+                    by: "wrappedLine",
+                    value: repeat,
+                    select: isInMarkMode,
+                })
+                .then(() => revealPrimaryActive(textEditor));
         }
-
-        return vscode.commands
-            .executeCommand<void>("cursorMove", {
-                to: "up",
-                by: "wrappedLine",
-                value: repeat,
-                select: isInMarkMode,
-            })
-            .then(() => revealPrimaryActive(textEditor));
     }
 }
 
