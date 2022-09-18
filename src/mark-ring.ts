@@ -70,29 +70,34 @@ export class Marker {
 export class MarkRing {
     private maxNum = 16;
     private ring: Array<Marker>;
-    private pointer: number | null;
+    private pointer: number | undefined = undefined;
 
     constructor(maxNum?: number) {
         if (maxNum) {
             this.maxNum = maxNum;
         }
 
-        this.pointer = null;
         this.ring = [];
     }
 
     public push(mark: Marker, replace = false, force = false): void {
         const top = this.getTop();
 
-        if (replace || top === undefined) {
+        if (top === undefined) {
             this.ring[0] = mark;
+            this.pointer = 0;
         } else if (force || !top.isEqual(mark)) {
-            this.ring.unshift(mark);
-            if (this.ring.length > this.maxNum) {
-                this.ring.pop();
+            assert(this.pointer);
+            if (replace) {
+                this.ring[this.pointer] = mark;
+            } else {
+                this.ring.unshift(mark);
+                this.pointer = 0;
+                if (this.ring.length > this.maxNum) {
+                    this.ring.pop();
+                }
             }
         }
-        this.pointer = 0;
     }
 
     public getTop(): Marker | undefined {
