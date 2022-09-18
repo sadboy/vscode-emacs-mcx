@@ -208,16 +208,18 @@ export class IsearchExit extends IsearchCommand {
             );
             MessageManager.showMessage("Mark saved where search started");
         }
-        await vscode.commands.executeCommand("closeFindWidget");
-        await vscode.commands.executeCommand("cancelSelection");
+        this.emacs.deactivateMark();
 
         if (args.length > 0) {
+            await vscode.commands.executeCommand("closeFindWidget");
             const arg = args[0];
             if (typeof arg === "object" && arg !== null && "then" in arg) {
                 await vscode.commands.executeCommand(
                     (arg as { then: string }).then
                 );
             }
+        } else {
+            return vscode.commands.executeCommand("closeFindWidget");
         }
     }
 }
