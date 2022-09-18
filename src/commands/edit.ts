@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { Selection, TextEditor } from "vscode";
+import { TextEditor } from "vscode";
 import { createParallel, EmacsCommand } from ".";
 
 export class DeleteBackwardChar extends EmacsCommand {
@@ -41,10 +41,6 @@ export class NewLine extends EmacsCommand {
         prefixArgument: number | undefined
     ): Promise<void[]> {
         this.emacsController.deactivateMark();
-
-        textEditor.selections = textEditor.selections.map(
-            (selection) => new Selection(selection.active, selection.active)
-        );
 
         const repeat = prefixArgument === undefined ? 1 : prefixArgument;
         return createParallel(repeat, () =>
