@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { Selection, TextEditor } from "vscode";
+import { Selection, TextDocument, TextEditor } from "vscode";
 import { instanceOfIEmacsCommandInterrupted } from "./commands";
 import { EmacsCommandRegistry } from "./commands/registry";
 import { KillYanker } from "./kill-yank";
@@ -17,7 +17,8 @@ export interface SearchState {
     startSelections: readonly vscode.Selection[] | undefined;
 }
 
-export class EmacsEmulator implements vscode.Disposable {
+export class EmacsEmulator {
+    public readonly uri: string;
     public readonly miniBuffer: Minibuffer;
     public readonly killRing: KillRing | null;
     public readonly killYanker: KillYanker;
@@ -29,6 +30,14 @@ export class EmacsEmulator implements vscode.Disposable {
         return this._lastCommand;
     }
 
+    public get editor(): TextEditor {
+        return this._editor;
+    }
+
+    public get document(): TextDocument {
+        return this._document;
+    }
+
     public get mark(): Marker | undefined {
         return this.markRing.getTop();
     }
@@ -38,30 +47,32 @@ export class EmacsEmulator implements vscode.Disposable {
     }
 
     public get isRegionActive(): boolean {
-        return this.textEditor.selections.some(
-            (selection) => !selection.isEmpty
-        );
+        return this._editor.selections.some((selection) => !selection.isEmpty);
     }
 
     public getRegion(): Selection[] {
         if (!this.mark) {
             return [];
         } else {
-            return this.mark.toAnchor(this.textEditor.selections);
+            return this.mark.toAnchor(this._editor.selections);
         }
     }
 
     public get numCursors(): number {
-        return this.textEditor.selections.length;
+        return this._editor.selections.length;
     }
 
     constructor(
-        textEditor: TextEditor,
+        textEditor: vscode.TextEditor,
         killRing: KillRing | null = null,
         minibuffer: Minibuffer = new InputBoxMinibuffer()
     ) {
-        this.textEditor = textEditor;
+        this._editor = textEditor;
+        this._document = textEditor.document;
+        this.killRing = killRing;
+        this.miniBuffer = minibuffer;
 
+        this.uri = this._document.uri.toString();
         this.markRing = new MarkRing(Configuration.instance.markRingMax);
 
         this.prefixArgumentHandler = new PrefixArgumentHandler(
@@ -69,53 +80,19 @@ export class EmacsEmulator implements vscode.Disposable {
             this.onPrefixArgumentAcceptingStateChange
         );
 
-        this.disposables = [];
-
-        vscode.workspace.onDidChangeTextDocument(
-            this.onDidChangeTextDocument,
-            this,
-            this.disposables
-        );
-        vscode.window.onDidChangeTextEditorSelection(
-            this.onDidChangeTextEditorSelection,
-            this,
-            this.disposables
-        );
-
         this.commandRegistry = new EmacsCommandRegistry(this);
         this.afterCommand = this.afterCommand.bind(this);
 
-        this.miniBuffer = minibuffer;
-        this.killRing = killRing;
         this.searchState = { startSelections: undefined };
         this.killYanker = new KillYanker(textEditor, killRing, minibuffer);
     }
 
-    public getTextEditor(): TextEditor {
-        return this.textEditor;
-    }
-
-    public registerDisposable(disposable: vscode.Disposable): void {
-        this.disposables.push(disposable);
-    }
-
-    public dispose(): void {
-        for (const disposable of this.disposables) {
-            disposable.dispose();
-        }
-    }
-
     public onDidChangeTextDocument(e: vscode.TextDocumentChangeEvent): void {
-        if (
-            e.document.uri.toString() !==
-            this.textEditor.document.uri.toString()
-        ) {
-            return;
-        }
+        assert(e.document.uri.toString() === this.uri);
 
         if (
             e.contentChanges.some((contentChange) =>
-                this.textEditor.selections.some((selection) =>
+                this._editor.selections.some((selection) =>
                     contentChange.range.intersection(selection)
                 )
             )
@@ -126,17 +103,15 @@ export class EmacsEmulator implements vscode.Disposable {
     }
 
     private _hasSelectionStateChanged(): boolean {
-        if (this._nativeSelections === this.textEditor.selections) {
+        if (this._lastSelections === this._editor.selections) {
             return false;
         }
-        if (
-            this._nativeSelections.length !== this.textEditor.selections.length
-        ) {
+        if (this._lastSelections.length !== this._editor.selections.length) {
             return true;
         }
-        for (let idx = 0; idx < this._nativeSelections.length; idx++) {
-            const left = this._nativeSelections[idx];
-            const right = this.textEditor.selections[idx];
+        for (let idx = 0; idx < this._lastSelections.length; idx++) {
+            const left = this._lastSelections[idx];
+            const right = this._editor.selections[idx];
 
             if (left === right) {
                 continue;
@@ -154,36 +129,63 @@ export class EmacsEmulator implements vscode.Disposable {
     public onDidChangeTextEditorSelection(
         e: vscode.TextEditorSelectionChangeEvent
     ): void {
-        if (e.textEditor !== this.textEditor) {
-            return;
-        }
+        assert(e.textEditor.document.uri.toString() === this.uri);
 
         if (!this._isInCommand && this._hasSelectionStateChanged()) {
             // Editor state was modified by forces beyond our control:
             this.thisCommand = undefined;
-            this._syncMarkAndSelection();
+            if (this.editor === e.textEditor) {
+                this._syncMarkAndSelection();
+            } else {
+                this.attachEditor(e.textEditor);
+            }
         }
         this.killYanker.onDidChangeTextEditorSelection();
         // TODO: remove:
         this.onDidInterruptTextEditor();
     }
 
+    public attachEditor(textEditor: TextEditor): void {
+        if (this.editor === textEditor) {
+            return;
+        }
+
+        assert(textEditor.document.uri.toString() === this.uri);
+
+        this._editor = textEditor;
+        this._document = textEditor.document;
+        this._syncEditorState();
+        this.killYanker.attachEditor(textEditor);
+    }
+
+    private _syncEditorState(): void {
+        if (this.isRegionActive) {
+            const mark = Marker.fromAnchor(this.editor.selections);
+            this.activateMark(true);
+            // Replace the current mark:
+            this.markRing.push(mark, true);
+        } else {
+            this.deactivateMark(false);
+        }
+        this._lastSelections = this.editor.selections;
+    }
+
     private _syncMarkAndSelection(): void {
         if (this.isRegionActive) {
             // Outside command activated region, update our mark to match:
-            const mark = Marker.fromAnchor(this.textEditor.selections);
+            const mark = Marker.fromAnchor(this.editor.selections);
             this.activateMark();
             if (!this.mark || !mark.isEqual(this.mark)) {
                 this.pushMark(mark);
             }
         } else if (this.isMarkActive) {
             // Mark is active but outside command deactivated region, so we reactivate:
-            assert(this.mark);
-            this.textEditor.selections = this.mark.toAnchor(
-                this.textEditor.selections
+            assert(this.mark !== undefined);
+            this._editor.selections = this.mark.toAnchor(
+                this._editor.selections
             );
         }
-        this._nativeSelections = this.textEditor.selections;
+        this._lastSelections = this.editor.selections;
     }
 
     /**
@@ -215,8 +217,8 @@ export class EmacsEmulator implements vscode.Disposable {
             return vscode.commands.executeCommand("type", { text: char });
         }
 
-        return this.textEditor.edit((editBuilder) => {
-            this.textEditor.selections.forEach((selection) => {
+        return this._editor.edit((editBuilder) => {
+            this._editor.selections.forEach((selection) => {
                 editBuilder.insert(selection.active, char.repeat(repeat));
             });
         });
@@ -334,14 +336,14 @@ export class EmacsEmulator implements vscode.Disposable {
         const prefixArgument = this.prefixArgumentHandler.getPrefixArgument();
         try {
             await command.run(
-                this.textEditor,
+                this._editor,
                 this.isMarkActive,
                 prefixArgument,
                 ...args
             );
         } finally {
             this.afterCommand();
-            this._nativeSelections = this.textEditor.selections;
+            this._lastSelections = this._editor.selections;
             this._isInCommand = false;
         }
     }
@@ -363,7 +365,7 @@ export class EmacsEmulator implements vscode.Disposable {
         this.killYanker.cancelKillAppend();
         this.prefixArgumentHandler.cancel();
 
-        this._nativeSelections = this.textEditor.selections;
+        this._lastSelections = this._editor.selections;
 
         MessageManager.showMessage("Quit");
     }
@@ -392,7 +394,7 @@ export class EmacsEmulator implements vscode.Disposable {
         activate = false
     ): asserts this is { mark: Marker } {
         if (newMark === undefined) {
-            newMark = Marker.fromCursor(this.textEditor.selections);
+            newMark = Marker.fromCursor(this._editor.selections);
         }
         this.markRing.push(newMark);
         if (!nomsg) {
@@ -409,14 +411,14 @@ export class EmacsEmulator implements vscode.Disposable {
 
     public exchangePointAndMark(): void {
         if (this.mark) {
-            const cursor = Marker.fromCursor(this.textEditor.selections);
-            let newSelections = this.mark.toCursor(this.textEditor.selections);
+            const cursor = Marker.fromCursor(this._editor.selections);
+            let newSelections = this.mark.toCursor(this._editor.selections);
             if (this.isMarkActive) {
                 newSelections = cursor.toAnchor(newSelections);
             }
-            this.textEditor.selections = newSelections;
+            this._editor.selections = newSelections;
             this.markRing.push(cursor, true);
-            return revealPrimaryActive(this.textEditor);
+            return revealPrimaryActive(this._editor);
         } else {
             MessageManager.showMessage("No mark set in this buffer");
         }
@@ -455,14 +457,14 @@ export class EmacsEmulator implements vscode.Disposable {
     }
 
     public deactivateRegion(): void {
-        const srcSelections = this.textEditor.selections;
-        this.textEditor.selections = srcSelections.map(
+        const srcSelections = this._editor.selections;
+        this._editor.selections = srcSelections.map(
             (selection) => new Selection(selection.active, selection.active)
         );
     }
 
     private cancelMultiCursor() {
-        this.textEditor.selections = [this.textEditor.selection];
+        this._editor.selections = [this._editor.selection];
     }
 
     private afterCommand() {
@@ -478,12 +480,12 @@ export class EmacsEmulator implements vscode.Disposable {
         });
     }
 
-    private readonly textEditor: TextEditor;
-    private readonly commandRegistry: EmacsCommandRegistry;
-    private readonly markRing: MarkRing;
+    private _editor: TextEditor;
+    private _document: TextDocument;
+    private _lastSelections: readonly vscode.Selection[] = [];
     private _isMarkActive = false;
     private _isInCommand = false;
     private _lastCommand: string | undefined = undefined;
-    private _nativeSelections: readonly vscode.Selection[] = [];
-    private disposables: vscode.Disposable[];
+    private readonly commandRegistry: EmacsCommandRegistry;
+    private readonly markRing: MarkRing;
 }

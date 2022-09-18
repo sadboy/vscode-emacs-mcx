@@ -24,20 +24,6 @@ export function activate(context: vscode.ExtensionContext): void {
     MessageManager.registerDispose(context);
     Configuration.registerDispose(context);
     context.subscriptions.push(WorkspaceConfigCache.instance);
-
-    const killRing = new KillRing(Configuration.instance.killRingMax);
-    const minibuffer = new InputBoxMinibuffer();
-
-    const emulatorMap = new EmacsEmulatorManager(killRing, minibuffer);
-    context.subscriptions.push(emulatorMap);
-
-    context.subscriptions.push(
-        vscode.workspace.onDidCloseTextDocument(
-            emulatorMap.onDidCloseTextDocument,
-            emulatorMap
-        )
-    );
-
     context.subscriptions.push(
         vscode.workspace.onDidChangeConfiguration((e) => {
             if (e.affectsConfiguration("emacs-mcx")) {
@@ -46,12 +32,36 @@ export function activate(context: vscode.ExtensionContext): void {
         })
     );
 
+    const killRing = new KillRing(Configuration.instance.killRingMax);
+    const minibuffer = new InputBoxMinibuffer();
+
+    const emulatorManager = new EmacsEmulatorManager(killRing, minibuffer);
+
+    context.subscriptions.push(
+        vscode.workspace.onDidChangeTextDocument(
+            emulatorManager.onDidChangeTextDocument,
+            emulatorManager
+        )
+    );
+    context.subscriptions.push(
+        vscode.window.onDidChangeTextEditorSelection(
+            emulatorManager.onDidChangeTextEditorSelection,
+            emulatorManager
+        )
+    );
+    context.subscriptions.push(
+        vscode.workspace.onDidCloseTextDocument(
+            emulatorManager.onDidCloseTextDocument,
+            emulatorManager
+        )
+    );
+
     function getEmulator() {
         const activeTextEditor = vscode.window.activeTextEditor;
         if (activeTextEditor === undefined) {
             return undefined;
         } else {
-            return emulatorMap.getOrCreate(activeTextEditor);
+            return emulatorManager.getOrCreate(activeTextEditor);
         }
     }
 

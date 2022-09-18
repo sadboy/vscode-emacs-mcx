@@ -1,3 +1,4 @@
+import assert from "assert";
 import { Minibuffer } from "src/minibuffer";
 import * as vscode from "vscode";
 import { Position, Range, TextEditor } from "vscode";
@@ -13,7 +14,7 @@ import {
 export { AppendDirection };
 
 export class KillYanker {
-    private readonly textEditor: TextEditor;
+    private textEditor: TextEditor;
     private readonly killRing: KillRing | null; // If null, killRing is disabled and only clipboard is used.
     private readonly minibuffer: Minibuffer;
 
@@ -44,6 +45,13 @@ export class KillYanker {
 
     public getTextEditor(): TextEditor {
         return this.textEditor;
+    }
+
+    public attachEditor(textEditor: TextEditor): void {
+        if (this.textEditor !== textEditor) {
+            this.textEditor = textEditor;
+            this.onDidChangeTextEditorSelection();
+        }
     }
 
     public onDidChangeTextDocument(): void {
