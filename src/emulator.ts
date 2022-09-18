@@ -134,10 +134,12 @@ export class EmacsEmulator {
         if (!this._isInCommand && this._hasSelectionStateChanged()) {
             // Editor state was modified by forces beyond our control:
             this.thisCommand = undefined;
-            if (this.editor === e.textEditor) {
-                this._syncMarkAndSelection();
-            } else {
+            if (this.editor !== e.textEditor) {
                 this.attachEditor(e.textEditor);
+            } else if (e.kind == vscode.TextEditorSelectionChangeKind.Mouse) {
+                this._syncEditorState();
+            } else {
+                this._syncMarkAndSelection();
             }
         }
         this.killYanker.onDidChangeTextEditorSelection();
@@ -161,9 +163,9 @@ export class EmacsEmulator {
     private _syncEditorState(): void {
         if (this.isRegionActive) {
             const mark = Marker.fromAnchor(this.editor.selections);
-            this.activateMark(true);
             // Replace the current mark:
             this.markRing.push(mark, true);
+            this.activateMark(true);
         } else {
             this.deactivateMark(false);
         }
