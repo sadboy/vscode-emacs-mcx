@@ -5,11 +5,11 @@ import { createParallel, EmacsCommand } from ".";
 export class DeleteBackwardChar extends EmacsCommand {
     public static readonly id = "deleteBackwardChar";
 
-    public execute(
+    public async execute(
         textEditor: TextEditor,
         isInMarkMode: boolean,
         prefixArgument: number | undefined
-    ): Thenable<unknown> {
+    ): Promise<unknown> {
         const repeat = prefixArgument === undefined ? 1 : prefixArgument;
         return createParallel(repeat, () =>
             vscode.commands.executeCommand("deleteLeft")
@@ -20,11 +20,11 @@ export class DeleteBackwardChar extends EmacsCommand {
 export class DeleteForwardChar extends EmacsCommand {
     public static readonly id = "deleteForwardChar";
 
-    public execute(
+    public async execute(
         textEditor: TextEditor,
         isInMarkMode: boolean,
         prefixArgument: number | undefined
-    ) {
+    ): Promise<void[]> {
         const repeat = prefixArgument === undefined ? 1 : prefixArgument;
         return createParallel(repeat, () =>
             vscode.commands.executeCommand<void>("deleteRight")
@@ -35,11 +35,11 @@ export class DeleteForwardChar extends EmacsCommand {
 export class NewLine extends EmacsCommand {
     public static readonly id = "newLine";
 
-    public execute(
+    public async execute(
         textEditor: TextEditor,
         isInMarkMode: boolean,
         prefixArgument: number | undefined
-    ) {
+    ): Promise<void[]> {
         this.emacsController.deactivateMark();
 
         textEditor.selections = textEditor.selections.map(

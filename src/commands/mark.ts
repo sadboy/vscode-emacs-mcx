@@ -6,11 +6,11 @@ import { revealPrimaryActive } from "./helpers/reveal";
 export class SetMarkCommand extends EmacsCommand {
     public static readonly id = "setMarkCommand";
 
-    public execute(
+    public async execute(
         textEditor: vscode.TextEditor,
         isInMarkMode: boolean,
         prefixArgument: number | undefined
-    ): void | Thenable<unknown> {
+    ): Promise<unknown> {
         const controller: EmacsEmulator = this.emacsController;
 
         if (
@@ -37,11 +37,11 @@ export class SetMarkCommand extends EmacsCommand {
 export class PopMarkCommand extends EmacsCommand {
     public static readonly id = "popMark";
 
-    public execute(
+    public async execute(
         textEditor: vscode.TextEditor,
         isInMarkMode: boolean,
         prefixArgument: number | undefined
-    ): void | Thenable<unknown> {
+    ): Promise<void> {
         const controller = this.emacsController;
 
         if (isInMarkMode) {
@@ -61,11 +61,11 @@ export class PopMarkCommand extends EmacsCommand {
 export class ExchangePointAndMarkCommand extends EmacsCommand {
     public static readonly id = "exchangePointAndMark";
 
-    public execute(
+    public async execute(
         textEditor: vscode.TextEditor,
         isInMarkMode: boolean,
         prefixArgument: number | undefined
-    ): void | Thenable<unknown> {
+    ): Promise<void> {
         const controller = this.emacsController;
         if (controller.prefixArgumentHandler.precedingSingleCtrlU()) {
             controller.activateMark();

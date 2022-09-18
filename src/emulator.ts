@@ -333,14 +333,8 @@ export class EmacsEmulator {
         this._lastCommand = this.thisCommand;
         this.thisCommand = commandName;
 
-        const prefixArgument = this.prefixArgumentHandler.getPrefixArgument();
         try {
-            await command.run(
-                this._editor,
-                this.isMarkActive,
-                prefixArgument,
-                ...args
-            );
+            await command.run(...args);
         } finally {
             this.afterCommand();
             this._lastSelections = this._editor.selections;

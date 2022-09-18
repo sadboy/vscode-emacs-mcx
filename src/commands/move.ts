@@ -30,11 +30,11 @@ export const moveCommandIds = [
 export class RevealDefinition extends EmacsCommand {
     public static readonly id = "revealDefinition";
 
-    public execute(
+    public async execute(
         textEditor: vscode.TextEditor,
         isInMarkMode: boolean,
         prefixArgument: number | undefined
-    ): void | Thenable<unknown> {
+    ): Promise<unknown> {
         this.emacsController.deactivateMark();
         this.emacsController.pushMark();
         return vscode.commands.executeCommand("editor.action.revealDefinition");
@@ -44,11 +44,11 @@ export class RevealDefinition extends EmacsCommand {
 export class RevealReference extends EmacsCommand {
     public static readonly id = "revealReference";
 
-    public execute(
+    public async execute(
         textEditor: vscode.TextEditor,
         isInMarkMode: boolean,
         prefixArgument: number | undefined
-    ): void | Thenable<unknown> {
+    ): Promise<unknown> {
         this.emacsController.deactivateMark();
         this.emacsController.pushMark();
         return vscode.commands.executeCommand("revealReference");
@@ -58,11 +58,11 @@ export class RevealReference extends EmacsCommand {
 export class ForwardChar extends EmacsCommand {
     public static readonly id = "forwardChar";
 
-    public execute(
+    public async execute(
         textEditor: TextEditor,
         isInMarkMode: boolean,
         prefixArgument: number | undefined
-    ): void | Thenable<void> {
+    ): Promise<void> {
         const charDelta = prefixArgument == undefined ? 1 : prefixArgument;
 
         if (charDelta === 1) {
@@ -88,11 +88,11 @@ export class ForwardChar extends EmacsCommand {
 export class BackwardChar extends EmacsCommand {
     public static readonly id = "backwardChar";
 
-    public execute(
+    public async execute(
         textEditor: TextEditor,
         isInMarkMode: boolean,
         prefixArgument: number | undefined
-    ): void | Thenable<void> {
+    ): Promise<void> {
         const charDelta = prefixArgument == undefined ? 1 : prefixArgument;
 
         if (charDelta === 1) {
@@ -118,11 +118,11 @@ export class BackwardChar extends EmacsCommand {
 export class NextLine extends EmacsCommand {
     public static readonly id = "nextLine";
 
-    public execute(
+    public async execute(
         textEditor: TextEditor,
         isInMarkMode: boolean,
         prefixArgument: number | undefined
-    ): void | Thenable<void> {
+    ): Promise<void> {
         const lineDelta = prefixArgument == undefined ? 1 : prefixArgument;
 
         return vscode.commands.executeCommand<void>("cursorMove", {
@@ -137,11 +137,11 @@ export class NextLine extends EmacsCommand {
 export class PreviousLine extends EmacsCommand {
     public static readonly id = "previousLine";
 
-    public execute(
+    public async execute(
         textEditor: TextEditor,
         isInMarkMode: boolean,
         prefixArgument: number | undefined
-    ): void | Thenable<void> {
+    ): Promise<void> {
         const lineDelta = prefixArgument == undefined ? 1 : prefixArgument;
 
         return vscode.commands.executeCommand<void>("cursorMove", {
@@ -156,11 +156,11 @@ export class PreviousLine extends EmacsCommand {
 export class MoveBeginningOfLine extends EmacsCommand {
     public static readonly id = "moveBeginningOfLine";
 
-    public execute(
+    public async execute(
         textEditor: TextEditor,
         isInMarkMode: boolean,
         prefixArgument: number | undefined
-    ): void | Thenable<void> {
+    ): Promise<void> {
         let moveHomeCommand: string;
 
         if (Configuration.instance.strictEmacsMove) {
@@ -194,11 +194,11 @@ export class MoveBeginningOfLine extends EmacsCommand {
 export class MoveEndOfLine extends EmacsCommand {
     public static readonly id = "moveEndOfLine";
 
-    public execute(
+    public async execute(
         textEditor: TextEditor,
         isInMarkMode: boolean,
         prefixArgument: number | undefined
-    ): void | Thenable<void> {
+    ): Promise<void> {
         let moveEndCommand: string;
 
         if (Configuration.instance.strictEmacsMove) {
@@ -231,11 +231,11 @@ export class MoveEndOfLine extends EmacsCommand {
 export class ForwardWord extends EmacsCommand {
     public static readonly id = "forwardWord";
 
-    public execute(
+    public async execute(
         textEditor: TextEditor,
         isInMarkMode: boolean,
         prefixArgument: number | undefined
-    ): void | Thenable<unknown> {
+    ): Promise<unknown> {
         const repeat = prefixArgument === undefined ? 1 : prefixArgument;
 
         return createParallel(repeat, () =>
@@ -249,11 +249,11 @@ export class ForwardWord extends EmacsCommand {
 export class BackwardWord extends EmacsCommand {
     public static readonly id = "backwardWord";
 
-    public execute(
+    public async execute(
         textEditor: TextEditor,
         isInMarkMode: boolean,
         prefixArgument: number | undefined
-    ): void | Thenable<unknown> {
+    ): Promise<unknown> {
         const repeat = prefixArgument === undefined ? 1 : prefixArgument;
 
         return createParallel(repeat, () =>
@@ -267,11 +267,11 @@ export class BackwardWord extends EmacsCommand {
 export class BackToIndentation extends EmacsCommand {
     public static readonly id = "backToIndentation";
 
-    public execute(
+    public async execute(
         textEditor: TextEditor,
         isInMarkMode: boolean,
         prefixArgument: number | undefined
-    ): void | Thenable<void> {
+    ): Promise<void> {
         const doc = textEditor.document;
 
         const moveActiveFunc = (active: vscode.Position): vscode.Position => {
@@ -303,7 +303,7 @@ export class BeginningOfBuffer extends EmacsCommand {
         textEditor: TextEditor,
         isInMarkMode: boolean,
         prefixArgument: number | undefined
-    ): Promise<void | Thenable<void>> {
+    ): Promise<void> {
         if (!isInMarkMode) {
             this.emacsController.pushMark();
         }
@@ -320,7 +320,7 @@ export class EndOfBuffer extends EmacsCommand {
         textEditor: TextEditor,
         isInMarkMode: boolean,
         prefixArgument: number | undefined
-    ): Promise<void | Thenable<void>> {
+    ): Promise<void> {
         if (!isInMarkMode) {
             this.emacsController.pushMark();
         }
@@ -333,11 +333,11 @@ export class EndOfBuffer extends EmacsCommand {
 export class ScrollUpCommand extends EmacsCommand {
     public static readonly id = "scrollUpCommand";
 
-    public execute(
+    public async execute(
         textEditor: TextEditor,
         isInMarkMode: boolean,
         prefixArgument: number | undefined
-    ): void | Thenable<void> {
+    ): Promise<void> {
         const repeat = prefixArgument === undefined ? 1 : prefixArgument;
 
         if (repeat === 1) {
@@ -380,11 +380,11 @@ export class ScrollUpCommand extends EmacsCommand {
 export class ScrollDownCommand extends EmacsCommand {
     public static readonly id = "scrollDownCommand";
 
-    public execute(
+    public async execute(
         textEditor: TextEditor,
         isInMarkMode: boolean,
         prefixArgument: number | undefined
-    ): void | Thenable<void> {
+    ): Promise<void> {
         const repeat = prefixArgument === undefined ? 1 : prefixArgument;
 
         if (repeat === 1) {
@@ -427,11 +427,11 @@ export class ScrollDownCommand extends EmacsCommand {
 export class ForwardParagraph extends EmacsCommand {
     public static readonly id = "forwardParagraph";
 
-    public execute(
+    public async execute(
         textEditor: TextEditor,
         isInMarkMode: boolean,
         prefixArgument: number | undefined
-    ): void {
+    ): Promise<void> {
         const repeat = prefixArgument === undefined ? 1 : prefixArgument;
         const doc = textEditor.document;
 
@@ -459,11 +459,11 @@ export class ForwardParagraph extends EmacsCommand {
 export class BackwardParagraph extends EmacsCommand {
     public static readonly id = "backwardParagraph";
 
-    public execute(
+    public async execute(
         textEditor: TextEditor,
         isInMarkMode: boolean,
         prefixArgument: number | undefined
-    ): void {
+    ): Promise<void> {
         const repeat = prefixArgument === undefined ? 1 : prefixArgument;
         const doc = textEditor.document;
 

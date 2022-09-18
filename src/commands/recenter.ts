@@ -16,11 +16,11 @@ export class RecenterTopBottom
 
     private recenterPosition: RecenterPosition = RecenterPosition.Middle;
 
-    public execute(
+    public async execute(
         textEditor: TextEditor,
         isInMarkMode: boolean,
         prefixArgument: number | undefined
-    ) {
+    ): Promise<void> {
         const activeRange = new vscode.Range(
             textEditor.selection.active,
             textEditor.selection.active
@@ -66,7 +66,7 @@ export class RecenterTopBottom
         }
     }
 
-    public onDidInterruptTextEditor() {
+    public onDidInterruptTextEditor(): void {
         this.recenterPosition = RecenterPosition.Middle;
     }
 }

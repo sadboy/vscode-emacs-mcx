@@ -17,21 +17,21 @@ export abstract class EmacsCommand {
         this.emacsController = controller;
     }
 
-    public run(
-        textEditor: TextEditor,
-        isInMarkMode: boolean,
-        prefixArgument: number | undefined,
-        ...args: any[]
-    ): Thenable<unknown> | void {
-        return this.execute(textEditor, isInMarkMode, prefixArgument, ...args);
+    public async run(...args: unknown[]): Promise<unknown> {
+        return this.execute(
+            this.emacsController.editor,
+            this.emacsController.isMarkActive,
+            this.emacsController.prefixArgumentHandler.getPrefixArgument(),
+            ...args
+        );
     }
 
     public abstract execute(
         textEditor: TextEditor,
         isInMarkMode: boolean,
         prefixArgument: number | undefined,
-        ...args: any[]
-    ): void | Thenable<unknown>;
+        ...args: unknown[]
+    ): Promise<unknown>;
 }
 
 export interface IEmacsCommandInterrupted {

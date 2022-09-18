@@ -13,11 +13,11 @@ export class TransformToUppercase extends EmacsCommand {
         textEditor: TextEditor,
         isInMarkMode: boolean,
         prefixArgument: number | undefined
-    ) {
+    ): Promise<void> {
         if (!hasNonEmptySelection(textEditor)) {
             await this.emacsController.runCommand("forwardWord");
         }
-        await vscode.commands.executeCommand<void>(
+        return vscode.commands.executeCommand<void>(
             "editor.action.transformToUppercase"
         );
     }
@@ -30,11 +30,11 @@ export class TransformToLowercase extends EmacsCommand {
         textEditor: TextEditor,
         isInMarkMode: boolean,
         prefixArgument: number | undefined
-    ) {
+    ): Promise<void> {
         if (!hasNonEmptySelection(textEditor)) {
             await this.emacsController.runCommand("forwardWord");
         }
-        await vscode.commands.executeCommand<void>(
+        return vscode.commands.executeCommand<void>(
             "editor.action.transformToLowercase"
         );
     }
@@ -47,11 +47,11 @@ export class TransformToTitlecase extends EmacsCommand {
         textEditor: TextEditor,
         isInMarkMode: boolean,
         prefixArgument: number | undefined
-    ) {
+    ): Promise<void> {
         if (!hasNonEmptySelection(textEditor)) {
             await this.emacsController.runCommand("forwardWord");
         }
-        await vscode.commands.executeCommand<void>(
+        return vscode.commands.executeCommand<void>(
             "editor.action.transformToTitlecase"
         );
     }
