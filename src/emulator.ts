@@ -135,7 +135,7 @@ export class EmacsEmulator {
             this.thisCommand = undefined;
             if (this.editor !== e.textEditor) {
                 this.attachEditor(e.textEditor);
-            } else if (e.kind == vscode.TextEditorSelectionChangeKind.Mouse) {
+            } else if (e.kind === vscode.TextEditorSelectionChangeKind.Mouse) {
                 this._syncEditorState();
             } else {
                 this._syncMarkAndSelection();
