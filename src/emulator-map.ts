@@ -3,6 +3,7 @@ import {
     TextDocumentChangeEvent,
     TextEditor,
     TextEditorSelectionChangeEvent,
+    ViewColumn,
 } from "vscode";
 import { EmacsEmulator } from "./emulator";
 import { KillRing } from "./kill-yank/kill-ring";
@@ -54,5 +55,124 @@ export class EmacsEmulatorManager {
 
     public onDidCloseTextDocument(t: TextDocument): void {
         this.emulatorMap.delete(t.uri.toString());
+    }
+}
+
+class NavStack {
+    private readonly previous: TextDocument[] = [];
+    private current: TextDocument | undefined = undefined;
+    private readonly next: TextDocument[] = [];
+    private maxSize = 12;
+
+    private push(stack: TextDocument[], document: TextDocument): number {
+        stack.push(document);
+        while (stack.length > this.maxSize) {
+            this.previous.shift();
+        }
+        return stack.length;
+    }
+
+    public go(direction: "backward" | "forward"): TextDocument | undefined {
+        let to: TextDocument[];
+        let from: TextDocument[];
+        if (direction === "backward") {
+            from = this.previous;
+            to = this.next;
+        } else {
+            from = this.next;
+            to = this.previous;
+        }
+
+        let item = from.pop();
+        while (item && (item.isClosed || item === this.current)) {
+            item = from.pop();
+        }
+        if (item) {
+            if (this.current) {
+                this.push(to, this.current);
+            }
+            this.current = item;
+        }
+        return item;
+    }
+
+    public update(active: TextDocument | undefined): void {
+        if (active !== this.current) {
+            if (this.current) {
+                this.push(this.previous, this.current);
+            }
+        }
+
+        this.current = active;
+    }
+}
+
+export class Navigator {
+    private readonly stacks: Map<ViewColumn, NavStack>;
+    private _lastColumn: ViewColumn | undefined;
+
+    public get lastColumn(): ViewColumn | undefined {
+        return this._lastColumn;
+    }
+
+    constructor() {
+        this.stacks = new Map();
+        this._lastColumn = undefined;
+    }
+
+    public onDidChangeVisibleTextEditors(
+        visibleEditors: readonly TextEditor[]
+    ): void {
+        const updates: TextDocument[] = [];
+        visibleEditors.forEach((editor) => {
+            if (
+                editor.viewColumn === undefined ||
+                editor.viewColumn === ViewColumn.Active ||
+                editor.viewColumn === ViewColumn.Beside
+            ) {
+                return;
+            }
+
+            let stack = this.stacks.get(editor.viewColumn);
+            if (!stack) {
+                stack = new NavStack();
+                this.stacks.set(editor.viewColumn, stack);
+            }
+            updates[editor.viewColumn] = editor.document;
+        });
+        this.stacks.forEach((stack, column) => stack.update(updates[column]));
+    }
+
+    public onDidChangeActiveTextEditor(
+        activeEditor: TextEditor | undefined
+    ): void {
+        if (activeEditor && activeEditor.viewColumn) {
+            this._lastColumn = activeEditor.viewColumn;
+        }
+    }
+
+    public navigate(
+        column: ViewColumn | undefined,
+        direction: "backward" | "forward"
+    ): TextDocument | undefined {
+        if (!column) {
+            column = this._lastColumn;
+        }
+        if (
+            column === undefined ||
+            column === ViewColumn.Active ||
+            column === ViewColumn.Beside
+        ) {
+            return undefined;
+        }
+
+        let stack = this.stacks.get(column);
+        if (!stack) {
+            stack = new NavStack();
+            this.stacks.set(column, stack);
+            return undefined;
+        } else {
+            return stack.go(direction);
+        }
     }
 }
