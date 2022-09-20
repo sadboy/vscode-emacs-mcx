@@ -1,4 +1,3 @@
-import assert from "assert";
 import { Minibuffer } from "src/minibuffer";
 import * as vscode from "vscode";
 import { Position, Range, TextEditor } from "vscode";

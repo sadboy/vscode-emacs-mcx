@@ -38,6 +38,15 @@ export function activate(context: vscode.ExtensionContext): void {
     const emulatorManager = new EmacsEmulatorManager(killRing, minibuffer);
     const navigator = new Navigator();
 
+    function getEmulator() {
+        const activeTextEditor = vscode.window.activeTextEditor;
+        if (activeTextEditor === undefined) {
+            return undefined;
+        } else {
+            return emulatorManager.getOrCreate(activeTextEditor);
+        }
+    }
+
     context.subscriptions.push(
         vscode.workspace.onDidChangeTextDocument(
             emulatorManager.onDidChangeTextDocument,
@@ -56,11 +65,16 @@ export function activate(context: vscode.ExtensionContext): void {
             emulatorManager
         )
     );
+
+    function updateVisibleEditors(editors: readonly vscode.TextEditor[]) {
+        navigator.onDidChangeVisibleTextEditors(editors);
+        editors.forEach((editor) => emulatorManager.getOrCreate(editor));
+    }
+
+    updateVisibleEditors(vscode.window.visibleTextEditors);
+
     context.subscriptions.push(
-        vscode.window.onDidChangeVisibleTextEditors(
-            navigator.onDidChangeVisibleTextEditors,
-            navigator
-        )
+        vscode.window.onDidChangeVisibleTextEditors(updateVisibleEditors)
     );
     context.subscriptions.push(
         vscode.window.onDidChangeActiveTextEditor(
@@ -68,15 +82,6 @@ export function activate(context: vscode.ExtensionContext): void {
             navigator
         )
     );
-
-    function getEmulator() {
-        const activeTextEditor = vscode.window.activeTextEditor;
-        if (activeTextEditor === undefined) {
-            return undefined;
-        } else {
-            return emulatorManager.getOrCreate(activeTextEditor);
-        }
-    }
 
     function registerEmulatorCommand(
         commandName: string,
