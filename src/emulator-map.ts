@@ -107,6 +107,8 @@ class NavStack {
     }
 }
 
+const IGNORED_SCHEMES = new Set(["output"]);
+
 export class Navigator {
     private readonly stacks: Map<ViewColumn, NavStack>;
     private _lastColumn: ViewColumn | undefined;
@@ -124,23 +126,32 @@ export class Navigator {
         visibleEditors: readonly TextEditor[]
     ): void {
         const updates: TextDocument[] = [];
+        const orphans: TextDocument[] = [];
         visibleEditors.forEach((editor) => {
             if (
                 editor.viewColumn === undefined ||
                 editor.viewColumn === ViewColumn.Active ||
                 editor.viewColumn === ViewColumn.Beside
             ) {
-                return;
+                if (!IGNORED_SCHEMES.has(editor.document.uri.scheme)) {
+                    orphans.push(editor.document);
+                }
+            } else {
+                let stack = this.stacks.get(editor.viewColumn);
+                if (!stack) {
+                    stack = new NavStack();
+                    this.stacks.set(editor.viewColumn, stack);
+                }
+                updates[editor.viewColumn] = editor.document;
             }
-
-            let stack = this.stacks.get(editor.viewColumn);
-            if (!stack) {
-                stack = new NavStack();
-                this.stacks.set(editor.viewColumn, stack);
-            }
-            updates[editor.viewColumn] = editor.document;
         });
-        this.stacks.forEach((stack, column) => stack.update(updates[column]));
+        this.stacks.forEach((stack, column) => {
+            let document = updates[column];
+            if (!document) {
+                document = orphans.shift();
+            }
+            stack.update(document);
+        });
     }
 
     public onDidChangeActiveTextEditor(
