@@ -11,6 +11,7 @@ import { EmacsEmulator } from "src/emulator";
 import {
     ExchangePointAndMarkCommand,
     PopMarkCommand,
+    RectangleModeCommand,
     SetMarkCommand,
 } from "./mark";
 
@@ -19,6 +20,7 @@ const _CommandRegister = new Map(
         SetMarkCommand,
         PopMarkCommand,
         ExchangePointAndMarkCommand,
+        RectangleModeCommand,
 
         MoveCommands.RevealDefinition,
         MoveCommands.RevealReference,

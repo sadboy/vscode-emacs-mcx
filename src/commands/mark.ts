@@ -73,3 +73,17 @@ export class ExchangePointAndMarkCommand extends EmacsCommand {
         return this.emacs.exchangePointAndMark();
     }
 }
+
+export class RectangleModeCommand extends EmacsCommand {
+    public static readonly id = "rectangleMode";
+
+    public async execute(
+        textEditor: vscode.TextEditor,
+        isInMarkMode: boolean,
+        prefixArgument: number | undefined
+    ): Promise<unknown> {
+        return vscode.commands.executeCommand(
+            "editor.action.toggleColumnSelection"
+        );
+    }
+}
