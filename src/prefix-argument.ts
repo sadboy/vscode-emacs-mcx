@@ -8,18 +8,22 @@ interface PrefixArgumentHandlerState {
     prefixArgumentStr: string; // Prefix argument string
 }
 
+type PrefixChangeCallback = (
+    newPrefixArgument: number | undefined
+) => Promise<unknown>;
+
+type PrefixStateChangeCallback = (newState: boolean) => Promise<unknown>;
+
 export class PrefixArgumentHandler {
     private state: PrefixArgumentHandlerState;
-    private onPrefixArgumentChange: (
-        newPrefixArgument: number | undefined
-    ) => Thenable<unknown>;
-    private onAcceptingStateChange: (newState: boolean) => Thenable<unknown>;
+    private onPrefixArgumentChange: PrefixChangeCallback | undefined;
+    private onAcceptingStateChange: PrefixStateChangeCallback | undefined;
 
     public constructor(
-        onPrefixArgumentChange: (
-            newPrefixArgument: number | undefined
-        ) => Thenable<unknown>,
-        onAcceptingStateChange: (newState: boolean) => Thenable<unknown>
+        onPrefixArgumentChange: PrefixChangeCallback | undefined = undefined,
+        onAcceptingStateChange:
+            | PrefixStateChangeCallback
+            | undefined = undefined
     ) {
         this.state = {
             isInPrefixArgumentMode: false,
@@ -49,13 +53,13 @@ export class PrefixArgumentHandler {
             oldState.cuCount !== this.state.cuCount;
 
         const promises = [];
-        if (acceptingStateChanged) {
+        if (acceptingStateChanged && this.onAcceptingStateChange) {
             const promise = this.onAcceptingStateChange(
                 this.state.isAcceptingPrefixArgument
             );
             promises.push(promise);
         }
-        if (prefixArgumentChanged) {
+        if (prefixArgumentChanged && this.onPrefixArgumentChange) {
             const promise = this.onPrefixArgumentChange(
                 this.getPrefixArgument()
             );

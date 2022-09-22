@@ -10,9 +10,12 @@ import {
     setEmptyCursors,
     setupWorkspace,
 } from "../utils";
+import { PrefixArgumentHandler } from "src/prefix-argument";
+import { InputBoxMinibuffer } from "src/minibuffer";
 
 suite("Universal argument (C-u)", () => {
     let activeTextEditor: TextEditor;
+    let prefix: PrefixArgumentHandler;
     let emulator: EmacsEmulator;
 
     setup(() => {
@@ -58,19 +61,25 @@ suite("Universal argument (C-u)", () => {
     suite("repeating single character", () => {
         setup(async () => {
             activeTextEditor = await setupWorkspace();
-            emulator = new EmacsEmulator(activeTextEditor);
+            prefix = new PrefixArgumentHandler();
+            emulator = new EmacsEmulator(
+                activeTextEditor,
+                null,
+                new InputBoxMinibuffer(),
+                prefix
+            );
         });
 
         teardown(cleanUpWorkspace);
 
         test("repeating character input for the given argument", async () => {
             resetExecuteCommandSpy();
-            await emulator.universalArgument();
+            await prefix.universalArgument();
             assertAcceptingArgumentContext(true);
             assertPrefixArgumentContext(4);
 
             resetExecuteCommandSpy();
-            await emulator.subsequentArgumentDigit(2);
+            await prefix.subsequentArgumentDigit(2);
             assertPrefixArgumentContext(2);
 
             resetExecuteCommandSpy();
@@ -82,12 +91,12 @@ suite("Universal argument (C-u)", () => {
 
         test("repeating character input for the given argument 0", async () => {
             resetExecuteCommandSpy();
-            await emulator.universalArgument();
+            await prefix.universalArgument();
             assertAcceptingArgumentContext(true);
             assertPrefixArgumentContext(4);
 
             resetExecuteCommandSpy();
-            await emulator.subsequentArgumentDigit(0);
+            await prefix.subsequentArgumentDigit(0);
             assertPrefixArgumentContext(0);
 
             resetExecuteCommandSpy();
@@ -99,16 +108,16 @@ suite("Universal argument (C-u)", () => {
 
         test("repeating character input for the given argument prefixed by 0", async () => {
             resetExecuteCommandSpy();
-            await emulator.universalArgument();
+            await prefix.universalArgument();
             assertAcceptingArgumentContext(true);
             assertPrefixArgumentContext(4);
 
             resetExecuteCommandSpy();
-            await emulator.subsequentArgumentDigit(0);
+            await prefix.subsequentArgumentDigit(0);
             assertPrefixArgumentContext(0);
 
             resetExecuteCommandSpy();
-            await emulator.subsequentArgumentDigit(2);
+            await prefix.subsequentArgumentDigit(2);
             assertPrefixArgumentContext(2);
 
             await emulator.typeChar("a");
@@ -119,16 +128,16 @@ suite("Universal argument (C-u)", () => {
 
         test("repeating character input for the given argument with multiple digits", async () => {
             resetExecuteCommandSpy();
-            await emulator.universalArgument();
+            await prefix.universalArgument();
             assertAcceptingArgumentContext(true);
             assertPrefixArgumentContext(4);
 
             resetExecuteCommandSpy();
-            await emulator.subsequentArgumentDigit(1);
+            await prefix.subsequentArgumentDigit(1);
             assertPrefixArgumentContext(1);
 
             resetExecuteCommandSpy();
-            await emulator.subsequentArgumentDigit(2);
+            await prefix.subsequentArgumentDigit(2);
             assertPrefixArgumentContext(12);
 
             resetExecuteCommandSpy();
@@ -140,7 +149,7 @@ suite("Universal argument (C-u)", () => {
 
         test("repeating character input with default argument (4)", async () => {
             resetExecuteCommandSpy();
-            await emulator.universalArgument();
+            await prefix.universalArgument();
             assertAcceptingArgumentContext(true);
             assertPrefixArgumentContext(4);
 
@@ -155,7 +164,7 @@ suite("Universal argument (C-u)", () => {
             test(`repeating character input with ${times} C-u`, async () => {
                 resetExecuteCommandSpy();
                 for (let i = 0; i < times; ++i) {
-                    await emulator.universalArgument();
+                    await prefix.universalArgument();
                 }
                 assertAcceptingArgumentContext(true);
                 assertPrefixArgumentContext(4 ** times);
@@ -170,20 +179,20 @@ suite("Universal argument (C-u)", () => {
 
         test("C-u stops prefix argument input", async () => {
             resetExecuteCommandSpy();
-            await emulator.universalArgument();
+            await prefix.universalArgument();
             assertAcceptingArgumentContext(true);
             assertPrefixArgumentContext(4);
 
             resetExecuteCommandSpy();
-            await emulator.subsequentArgumentDigit(1);
+            await prefix.subsequentArgumentDigit(1);
             assertPrefixArgumentContext(1);
 
             resetExecuteCommandSpy();
-            await emulator.subsequentArgumentDigit(2);
+            await prefix.subsequentArgumentDigit(2);
             assertPrefixArgumentContext(12);
 
             resetExecuteCommandSpy();
-            await emulator.universalArgument();
+            await prefix.universalArgument();
             assertAcceptingArgumentContext(false);
 
             await emulator.typeChar("3");
@@ -194,16 +203,16 @@ suite("Universal argument (C-u)", () => {
 
         test("numerical input cancels previous repeated C-u", async () => {
             resetExecuteCommandSpy();
-            await emulator.universalArgument();
+            await prefix.universalArgument();
             assertAcceptingArgumentContext(true);
-            await emulator.universalArgument();
+            await prefix.universalArgument();
 
             resetExecuteCommandSpy();
-            await emulator.universalArgument();
+            await prefix.universalArgument();
             assertPrefixArgumentContext(64);
 
             resetExecuteCommandSpy();
-            await emulator.subsequentArgumentDigit(3);
+            await prefix.subsequentArgumentDigit(3);
             assertPrefixArgumentContext(3);
 
             resetExecuteCommandSpy();
@@ -230,8 +239,8 @@ suite("Universal argument (C-u)", () => {
                 setEmptyCursors(activeTextEditor, [0, 0]);
 
                 resetExecuteCommandSpy();
-                await emulator.universalArgument();
-                await emulator.subsequentArgumentDigit(3);
+                await prefix.universalArgument();
+                await prefix.subsequentArgumentDigit(3);
                 await emulator.runCommand("forwardChar");
 
                 assertCursorsEqual(activeTextEditor, [0, 3]);
@@ -245,8 +254,8 @@ suite("Universal argument (C-u)", () => {
                 setEmptyCursors(activeTextEditor, [0, 0]);
 
                 resetExecuteCommandSpy();
-                await emulator.universalArgument();
-                await emulator.subsequentArgumentDigit(0);
+                await prefix.universalArgument();
+                await prefix.subsequentArgumentDigit(0);
                 await emulator.runCommand("forwardChar");
 
                 assertCursorsEqual(activeTextEditor, [0, 0]);
@@ -260,9 +269,9 @@ suite("Universal argument (C-u)", () => {
                 setEmptyCursors(activeTextEditor, [0, 0]);
 
                 resetExecuteCommandSpy();
-                await emulator.universalArgument();
-                await emulator.subsequentArgumentDigit(0);
-                await emulator.subsequentArgumentDigit(3);
+                await prefix.universalArgument();
+                await prefix.subsequentArgumentDigit(0);
+                await prefix.subsequentArgumentDigit(3);
                 await emulator.runCommand("forwardChar");
 
                 assertCursorsEqual(activeTextEditor, [0, 3]);
@@ -276,9 +285,9 @@ suite("Universal argument (C-u)", () => {
                 setEmptyCursors(activeTextEditor, [0, 0]);
 
                 resetExecuteCommandSpy();
-                await emulator.universalArgument();
-                await emulator.subsequentArgumentDigit(1);
-                await emulator.subsequentArgumentDigit(2);
+                await prefix.universalArgument();
+                await prefix.subsequentArgumentDigit(1);
+                await prefix.subsequentArgumentDigit(2);
                 await emulator.runCommand("forwardChar");
 
                 assertCursorsEqual(activeTextEditor, [0, 12]);
@@ -292,7 +301,7 @@ suite("Universal argument (C-u)", () => {
                 setEmptyCursors(activeTextEditor, [0, 0]);
 
                 resetExecuteCommandSpy();
-                await emulator.universalArgument();
+                await prefix.universalArgument();
                 await emulator.runCommand("forwardChar");
 
                 assertCursorsEqual(activeTextEditor, [0, 4]);
@@ -306,8 +315,8 @@ suite("Universal argument (C-u)", () => {
                 setEmptyCursors(activeTextEditor, [0, 0]);
 
                 resetExecuteCommandSpy();
-                await emulator.universalArgument();
-                await emulator.universalArgument();
+                await prefix.universalArgument();
+                await prefix.universalArgument();
                 await emulator.runCommand("forwardChar");
 
                 assertCursorsEqual(activeTextEditor, [0, 16]);
@@ -321,11 +330,11 @@ suite("Universal argument (C-u)", () => {
                 setEmptyCursors(activeTextEditor, [0, 0]);
 
                 resetExecuteCommandSpy();
-                await emulator.universalArgument();
+                await prefix.universalArgument();
                 assertAcceptingArgumentContext(true);
-                await emulator.subsequentArgumentDigit(1);
-                await emulator.subsequentArgumentDigit(2);
-                await emulator.universalArgument();
+                await prefix.subsequentArgumentDigit(1);
+                await prefix.subsequentArgumentDigit(2);
+                await prefix.universalArgument();
                 assertAcceptingArgumentContext(false);
 
                 resetExecuteCommandSpy();
@@ -342,10 +351,10 @@ suite("Universal argument (C-u)", () => {
                 setEmptyCursors(activeTextEditor, [0, 0]);
 
                 resetExecuteCommandSpy();
-                await emulator.universalArgument();
-                await emulator.universalArgument();
-                await emulator.universalArgument();
-                await emulator.subsequentArgumentDigit(3);
+                await prefix.universalArgument();
+                await prefix.universalArgument();
+                await prefix.universalArgument();
+                await prefix.subsequentArgumentDigit(3);
                 await emulator.runCommand("forwardChar");
 
                 assertCursorsEqual(activeTextEditor, [0, 3]);
@@ -359,8 +368,8 @@ suite("Universal argument (C-u)", () => {
                 setEmptyCursors(activeTextEditor, [0, 0], [1, 0]);
 
                 resetExecuteCommandSpy();
-                await emulator.universalArgument();
-                await emulator.subsequentArgumentDigit(3);
+                await prefix.universalArgument();
+                await prefix.subsequentArgumentDigit(3);
                 await emulator.runCommand("forwardChar");
 
                 assertCursorsEqual(activeTextEditor, [0, 3], [1, 3]);
@@ -384,8 +393,8 @@ suite("Universal argument (C-u)", () => {
             setEmptyCursors(activeTextEditor, [0, 0]);
 
             resetExecuteCommandSpy();
-            await emulator.universalArgument();
-            await emulator.universalArgument(); // C-u * 2 makes 16 character movements
+            await prefix.universalArgument();
+            await prefix.universalArgument(); // C-u * 2 makes 16 character movements
 
             await emulator.runCommand("forwardChar");
 
@@ -396,9 +405,9 @@ suite("Universal argument (C-u)", () => {
             setEmptyCursors(activeTextEditor, [0, 0]);
 
             resetExecuteCommandSpy();
-            await emulator.universalArgument();
-            await emulator.universalArgument();
-            await emulator.universalArgument(); // C-u * 3 makes 64 character movements
+            await prefix.universalArgument();
+            await prefix.universalArgument();
+            await prefix.universalArgument(); // C-u * 3 makes 64 character movements
 
             await emulator.runCommand("forwardChar");
 
@@ -418,8 +427,8 @@ suite("Universal argument (C-u)", () => {
             setEmptyCursors(activeTextEditor, [8, 0]);
 
             resetExecuteCommandSpy();
-            await emulator.universalArgument();
-            await emulator.universalArgument(); // C-u * 2 makes 16 character movements
+            await prefix.universalArgument();
+            await prefix.universalArgument(); // C-u * 2 makes 16 character movements
 
             await emulator.runCommand("backwardChar");
 
@@ -430,9 +439,9 @@ suite("Universal argument (C-u)", () => {
             setEmptyCursors(activeTextEditor, [0, 0]);
 
             resetExecuteCommandSpy();
-            await emulator.universalArgument();
-            await emulator.universalArgument();
-            await emulator.universalArgument(); // C-u * 3 makes 64 character movements
+            await prefix.universalArgument();
+            await prefix.universalArgument();
+            await prefix.universalArgument(); // C-u * 3 makes 64 character movements
 
             await emulator.runCommand("backwardChar");
 

@@ -8,16 +8,23 @@ import {
 import { EmacsEmulator } from "./emulator";
 import { KillRing } from "./kill-yank/kill-ring";
 import { Minibuffer } from "./minibuffer";
+import { PrefixArgumentHandler } from "./prefix-argument";
 
 export class EmacsEmulatorManager {
     private readonly emulatorMap: Map<string, EmacsEmulator>;
     private readonly killRing: KillRing;
     private readonly minibuffer: Minibuffer;
+    private readonly prefixArgumentHandler: PrefixArgumentHandler;
 
-    constructor(killRing: KillRing, minibuffer: Minibuffer) {
+    constructor(
+        killRing: KillRing,
+        minibuffer: Minibuffer,
+        prefixArgumentHandler: PrefixArgumentHandler
+    ) {
         this.emulatorMap = new Map();
         this.killRing = killRing;
         this.minibuffer = minibuffer;
+        this.prefixArgumentHandler = prefixArgumentHandler;
     }
 
     public getOrCreate(textEditor: TextEditor): EmacsEmulator {
@@ -27,7 +34,8 @@ export class EmacsEmulatorManager {
             emulator = new EmacsEmulator(
                 textEditor,
                 this.killRing,
-                this.minibuffer
+                this.minibuffer,
+                this.prefixArgumentHandler
             );
             this.emulatorMap.set(uri, emulator);
         }

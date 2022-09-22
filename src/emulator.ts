@@ -64,20 +64,17 @@ export class EmacsEmulator {
     constructor(
         textEditor: vscode.TextEditor,
         killRing: KillRing | null = null,
-        minibuffer: Minibuffer = new InputBoxMinibuffer()
+        minibuffer: Minibuffer = new InputBoxMinibuffer(),
+        prefixArgumentHandler: PrefixArgumentHandler = new PrefixArgumentHandler()
     ) {
         this._editor = textEditor;
         this._document = textEditor.document;
         this.killRing = killRing;
         this.miniBuffer = minibuffer;
+        this.prefixArgumentHandler = prefixArgumentHandler;
 
         this.uri = this._document.uri.toString();
         this.markRing = new MarkRing(Configuration.instance.markRingMax);
-
-        this.prefixArgumentHandler = new PrefixArgumentHandler(
-            this.onPrefixArgumentChange,
-            this.onPrefixArgumentAcceptingStateChange
-        );
 
         this.commandRegistry = new EmacsCommandRegistry(this);
         this.afterCommand = this.afterCommand.bind(this);
@@ -256,68 +253,6 @@ export class EmacsEmulator {
         });
     }
 
-    /**
-     * C-u
-     */
-    public universalArgument(): Promise<unknown> {
-        return this.prefixArgumentHandler.universalArgument();
-    }
-
-    /**
-     * M-<number>
-     */
-    public digitArgument(digit: number): Promise<unknown> {
-        return this.prefixArgumentHandler.digitArgument(digit);
-    }
-
-    /**
-     * M--
-     */
-    public negativeArgument(): Promise<unknown> {
-        return this.prefixArgumentHandler.negativeArgument();
-    }
-
-    /**
-     * Digits following C-u or M-<number>
-     */
-    public subsequentArgumentDigit(arg: number): Promise<unknown> {
-        return this.prefixArgumentHandler.subsequentArgumentDigit(arg);
-    }
-
-    public onPrefixArgumentChange(
-        newPrefixArgument: number | undefined
-    ): Thenable<unknown> {
-        logger.debug(
-            `[EmacsEmulator.onPrefixArgumentChange]\t Prefix argument: ${newPrefixArgument}`
-        );
-
-        return Promise.all([
-            vscode.commands.executeCommand(
-                "setContext",
-                "emacs-mcx.prefixArgument",
-                newPrefixArgument
-            ),
-            vscode.commands.executeCommand(
-                "setContext",
-                "emacs-mcx.prefixArgumentExists",
-                newPrefixArgument != null
-            ),
-        ]);
-    }
-
-    public onPrefixArgumentAcceptingStateChange(
-        newState: boolean
-    ): Thenable<unknown> {
-        logger.debug(
-            `[EmacsEmulator.onPrefixArgumentAcceptingStateChange]\t Prefix accepting: ${newState}`
-        );
-        return vscode.commands.executeCommand(
-            "setContext",
-            "emacs-mcx.acceptingArgument",
-            newState
-        );
-    }
-
     public async runCommand(
         commandName: string,
         ...args: unknown[]
@@ -431,7 +366,7 @@ export class EmacsEmulator {
 
     public executeCommandWithPrefixArgument<T>(
         command: string,
-        args: any = null,
+        args: unknown[] | undefined,
         prefixArgumentKey = "prefixArgument"
     ): Thenable<T | undefined> {
         const prefixArgument = this.prefixArgumentHandler.getPrefixArgument();

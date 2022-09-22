@@ -4,21 +4,72 @@ import { Configuration } from "./configuration/configuration";
 import { WorkspaceConfigCache } from "./workspace-configuration";
 import { EmacsEmulator } from "./emulator";
 import { EmacsEmulatorManager, Navigator } from "./emulator-map";
-import { executeCommands } from "./execute-commands";
 import { KillRing } from "./kill-yank/kill-ring";
 import { logger } from "./logger";
 import { MessageManager } from "./message";
 import { InputBoxMinibuffer } from "./minibuffer";
+import { PrefixArgumentHandler } from "./prefix-argument";
 
-// HACK: Currently there is no official type-safe way to handle
-//       the unsafe inputs such as the arguments of the extensions.
-// See: https://github.com/microsoft/TypeScript/issues/37700#issuecomment-940865298
-type Unreliable<T> =
-    | { [P in keyof T]?: Unreliable<T[P]> }
-    | Array<Unreliable<T>>
-    | undefined;
+interface PrefixableCommand {
+    command: string;
+    prefixArgumentKey?: string;
+    args?: unknown[];
+}
+
+function isPrefixableCommandArgs(
+    args: PrefixableCommand | unknown
+): args is PrefixableCommand {
+    if (typeof args !== "object" || !args || !("command" in args)) {
+        return false;
+    }
+    const { command } = args as { command: unknown };
+    if (typeof command !== "string") {
+        return false;
+    }
+    if ("prefixArgumentKey" in args) {
+        const { prefixArgumentKey } = args as { prefixArgumentKey: unknown };
+        if (typeof prefixArgumentKey !== "string") {
+            return false;
+        }
+    }
+    return true;
+}
 
 const COMMAND_NAME_PREFIX = "emacs-mcx";
+
+async function onPrefixArgumentChange(
+    newPrefixArgument: number | undefined
+): Promise<unknown> {
+    logger.debug(
+        `[onPrefixArgumentChange]\t Prefix argument: ${newPrefixArgument}`
+    );
+
+    return Promise.all([
+        vscode.commands.executeCommand(
+            "setContext",
+            "emacs-mcx.prefixArgument",
+            newPrefixArgument
+        ),
+        vscode.commands.executeCommand(
+            "setContext",
+            "emacs-mcx.prefixArgumentExists",
+            newPrefixArgument != null
+        ),
+    ]);
+}
+
+async function onPrefixArgumentAcceptingStateChange(
+    newState: boolean
+): Promise<unknown> {
+    logger.debug(
+        `[onPrefixArgumentAcceptingStateChange]\t Prefix accepting: ${newState}`
+    );
+    return vscode.commands.executeCommand(
+        "setContext",
+        "emacs-mcx.acceptingArgument",
+        newState
+    );
+}
 
 export function activate(context: vscode.ExtensionContext): void {
     MessageManager.registerDispose(context);
@@ -34,8 +85,16 @@ export function activate(context: vscode.ExtensionContext): void {
 
     const killRing = new KillRing(Configuration.instance.killRingMax);
     const minibuffer = new InputBoxMinibuffer();
+    const prefixArgumentHandler = new PrefixArgumentHandler(
+        onPrefixArgumentChange,
+        onPrefixArgumentAcceptingStateChange
+    );
 
-    const emulatorManager = new EmacsEmulatorManager(killRing, minibuffer);
+    const emulatorManager = new EmacsEmulatorManager(
+        killRing,
+        minibuffer,
+        prefixArgumentHandler
+    );
     const navigator = new Navigator();
 
     function getEmulator() {
@@ -85,8 +144,8 @@ export function activate(context: vscode.ExtensionContext): void {
 
     function registerEmulatorCommand(
         commandName: string,
-        callback: (emulator: EmacsEmulator, ...args: Unreliable<any>[]) => any,
-        onNoEmulator?: (...args: any[]) => any
+        callback: (emulator: EmacsEmulator, ...args: unknown[]) => unknown,
+        onNoEmulator?: (...args: unknown[]) => unknown
     ) {
         const disposable = vscode.commands.registerCommand(
             commandName,
@@ -122,76 +181,50 @@ export function activate(context: vscode.ExtensionContext): void {
         );
     }
 
-    registerEmulatorCommand(
-        `${COMMAND_NAME_PREFIX}.subsequentArgumentDigit`,
-        (emulator, args) => {
-            if (!Array.isArray(args)) {
-                return;
+    context.subscriptions.push(
+        vscode.commands.registerCommand(
+            `${COMMAND_NAME_PREFIX}.subsequentArgumentDigit`,
+            async (...args) => {
+                prefixArgumentHandler.subsequentArgumentDigit(
+                    (args as [number])[0]
+                );
             }
-            const arg = args[0];
-            if (typeof arg !== "number") {
-                return;
-            }
-            emulator.subsequentArgumentDigit(arg);
-        }
+        )
     );
 
-    registerEmulatorCommand(
-        `${COMMAND_NAME_PREFIX}.digitArgument`,
-        (emulator, args) => {
-            if (!Array.isArray(args)) {
-                return;
+    context.subscriptions.push(
+        vscode.commands.registerCommand(
+            `${COMMAND_NAME_PREFIX}.digitArgument`,
+            async (...args) => {
+                prefixArgumentHandler.digitArgument((args as [number])[0]);
             }
-            const arg = args[0];
-            if (typeof arg !== "number") {
-                return;
-            }
-            emulator.digitArgument(arg);
-        }
+        )
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand(
+            `${COMMAND_NAME_PREFIX}.universalArgument`,
+            async () => prefixArgumentHandler.universalArgument()
+        )
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand(
+            `${COMMAND_NAME_PREFIX}.negativeArgument`,
+            async () => prefixArgumentHandler.negativeArgument()
+        )
     );
 
     registerEmulatorCommand(
         `${COMMAND_NAME_PREFIX}.typeChar`,
         (emulator, args) => {
-            if (!Array.isArray(args)) {
-                return;
-            }
-            const arg = args[0];
-            if (typeof arg !== "string") {
-                return;
-            }
-            emulator.typeChar(arg);
-        }
-    );
-
-    registerEmulatorCommand(
-        `${COMMAND_NAME_PREFIX}.universalArgument`,
-        (emulator) => {
-            emulator.universalArgument();
-        }
-    );
-
-    registerEmulatorCommand(
-        `${COMMAND_NAME_PREFIX}.negativeArgument`,
-        (emulator) => {
-            return emulator.negativeArgument();
+            emulator.typeChar((args as [string])[0]);
         }
     );
 
     registerEmulatorCommand(`${COMMAND_NAME_PREFIX}.cancel`, (emulator) => {
         emulator.cancel();
     });
-
-    context.subscriptions.push(
-        vscode.commands.registerCommand(
-            `${COMMAND_NAME_PREFIX}.executeCommands`,
-            async (...args: any[]) => {
-                if (1 <= args.length) {
-                    executeCommands(args[0]);
-                }
-            }
-        )
-    );
 
     async function navigate(direction: "backward" | "forward") {
         let activeColumn: vscode.ViewColumn | undefined = undefined;
@@ -231,19 +264,7 @@ export function activate(context: vscode.ExtensionContext): void {
     registerEmulatorCommand(
         `${COMMAND_NAME_PREFIX}.executeCommandWithPrefixArgument`,
         (emulator, args) => {
-            if (
-                typeof args !== "object" ||
-                args == null ||
-                Array.isArray(args)
-            ) {
-                return;
-            }
-
-            if (
-                typeof args?.command === "string" &&
-                (typeof args?.prefixArgumentKey === "string" ||
-                    args?.prefixArgumentKey == null)
-            ) {
+            if (isPrefixableCommandArgs(args)) {
                 emulator.executeCommandWithPrefixArgument(
                     args["command"],
                     args["args"],
