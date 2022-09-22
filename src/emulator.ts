@@ -382,9 +382,14 @@ export class EmacsEmulator {
         return this.prefixArgumentHandler.getPrefixArgument();
     }
 
+    public activateRegion(): void {
+        if (this.mark) {
+            this.editor.selections = this.mark.toAnchor(this.editor.selections);
+        }
+    }
+
     public deactivateRegion(): void {
-        const srcSelections = this._editor.selections;
-        this._editor.selections = srcSelections.map(
+        this.editor.selections = this.editor.selections.map(
             (selection) => new Selection(selection.active, selection.active)
         );
     }
