@@ -3,12 +3,15 @@ import sinon from "sinon";
 import assert from "assert";
 import { EmacsEmulator } from "../../emulator";
 import { cleanUpWorkspace, setupWorkspace } from "./utils";
+import { PrefixArgumentHandler } from "../../prefix-argument";
+import { InputBoxMinibuffer } from "../../minibuffer";
 
 suite("executeCommandWithPrefixArgument", () => {
     let commandMock: sinon.SinonExpectation;
     let commandDisposable: vscode.Disposable;
 
     let activeTextEditor: vscode.TextEditor;
+    let prefix: PrefixArgumentHandler;
     let emulator: EmacsEmulator;
 
     setup(async () => {
@@ -19,7 +22,13 @@ suite("executeCommandWithPrefixArgument", () => {
         );
 
         activeTextEditor = await setupWorkspace();
-        emulator = new EmacsEmulator(activeTextEditor);
+        prefix = new PrefixArgumentHandler();
+        emulator = new EmacsEmulator(
+            activeTextEditor,
+            null,
+            new InputBoxMinibuffer(),
+            prefix
+        );
     });
 
     teardown(async () => {
@@ -28,16 +37,22 @@ suite("executeCommandWithPrefixArgument", () => {
     });
 
     test("executing another command", async () => {
-        await emulator.executeCommandWithPrefixArgument("emacs-mcx-test.foo");
+        await emulator.executeCommandWithPrefixArgument(
+            "emacs-mcx-test.foo",
+            {}
+        );
 
         assert.ok(commandMock.calledWith({ prefixArgument: undefined }));
         assert.strictEqual(emulator.getPrefixArgument(), undefined);
     });
 
     test("executing another command with the prefix argument", async () => {
-        await emulator.universalArgument();
+        await prefix.universalArgument();
 
-        await emulator.executeCommandWithPrefixArgument("emacs-mcx-test.foo");
+        await emulator.executeCommandWithPrefixArgument(
+            "emacs-mcx-test.foo",
+            {}
+        );
 
         assert.ok(commandMock.calledWith({ prefixArgument: 4 }));
         assert.strictEqual(emulator.getPrefixArgument(), undefined);
@@ -60,7 +75,7 @@ suite("executeCommandWithPrefixArgument", () => {
     });
 
     test("executing another command with the passed arguments and the prefix argument", async () => {
-        await emulator.universalArgument();
+        await prefix.universalArgument();
 
         await emulator.executeCommandWithPrefixArgument("emacs-mcx-test.foo", {
             foo: "bar",
@@ -74,7 +89,7 @@ suite("executeCommandWithPrefixArgument", () => {
     });
 
     test("executing another command with the customized prefix argument key", async () => {
-        await emulator.universalArgument();
+        await prefix.universalArgument();
 
         await emulator.executeCommandWithPrefixArgument(
             "emacs-mcx-test.foo",

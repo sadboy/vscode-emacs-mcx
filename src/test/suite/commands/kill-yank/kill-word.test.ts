@@ -1,3 +1,5 @@
+import { InputBoxMinibuffer } from "../../../../minibuffer";
+import { PrefixArgumentHandler } from "../../../../prefix-argument";
 import { TextEditor } from "vscode";
 import { EmacsEmulator } from "../../../../emulator";
 import { KillRing } from "../../../../kill-yank/kill-ring";
@@ -83,6 +85,7 @@ suite("killWord and backwardKillWord with JSON document", () => {
 
 suite("killWord and backwardKillWord with Lorem ipsum", () => {
     let activeTextEditor: TextEditor;
+    let prefix: PrefixArgumentHandler;
     let emulator: EmacsEmulator;
 
     setup(async () => {
@@ -90,7 +93,13 @@ suite("killWord and backwardKillWord with Lorem ipsum", () => {
             "Lorem ipsum dolor sit amet,\nconsectetur adipiscing elit,";
         activeTextEditor = await setupWorkspace(initialText);
         const killRing = new KillRing(3);
-        emulator = new EmacsEmulator(activeTextEditor, killRing);
+        prefix = new PrefixArgumentHandler();
+        emulator = new EmacsEmulator(
+            activeTextEditor,
+            killRing,
+            new InputBoxMinibuffer(),
+            prefix
+        );
     });
 
     teardown(cleanUpWorkspace);
@@ -213,7 +222,7 @@ suite("killWord and backwardKillWord with Lorem ipsum", () => {
             setEmptyCursors(activeTextEditor, [0, 11]);
 
             // Prefix argument '4'
-            await emulator.universalArgument();
+            await prefix.universalArgument();
 
             // Kill
             await emulator.runCommand("killWord");
@@ -235,7 +244,7 @@ suite("killWord and backwardKillWord with Lorem ipsum", () => {
             setEmptyCursors(activeTextEditor, [1, 11]);
 
             // Prefix argument '4'
-            await emulator.universalArgument();
+            await prefix.universalArgument();
 
             // Kill
             await emulator.runCommand("killWord");
@@ -374,7 +383,7 @@ suite("killWord and backwardKillWord with Lorem ipsum", () => {
             setEmptyCursors(activeTextEditor, [1, 22]);
 
             // Prefix argument '4'
-            await emulator.universalArgument();
+            await prefix.universalArgument();
 
             // Kill
             await emulator.runCommand("backwardKillWord");
@@ -397,7 +406,7 @@ suite("killWord and backwardKillWord with Lorem ipsum", () => {
             setEmptyCursors(activeTextEditor, [0, 11]);
 
             // Prefix argument '4'
-            await emulator.universalArgument();
+            await prefix.universalArgument();
 
             // Kill
             await emulator.runCommand("backwardKillWord");

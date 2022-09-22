@@ -144,8 +144,8 @@ suite("paredit.kill-sexp", () => {
     test("killing inner parentheses with prefix argument", async () => {
         setEmptyCursors(activeTextEditor, [1, 0]);
 
-        await emulator.universalArgument();
-        await emulator.subsequentArgumentDigit(2);
+        await emulator.prefixArgumentHandler.universalArgument();
+        await emulator.prefixArgumentHandler.subsequentArgumentDigit(2);
         await emulator.runCommand("paredit.killSexp");
 
         assertTextEqual(
@@ -251,8 +251,8 @@ suite("paredit.backward-kill-sexp", () => {
     test("killing inner parentheses with prefix argument", async () => {
         setEmptyCursors(activeTextEditor, [6, 3]);
 
-        await emulator.universalArgument();
-        await emulator.subsequentArgumentDigit(2);
+        await emulator.prefixArgumentHandler.universalArgument();
+        await emulator.prefixArgumentHandler.subsequentArgumentDigit(2);
         await emulator.runCommand("paredit.backwardKillSexp");
 
         assertTextEqual(
@@ -341,8 +341,8 @@ suite("paredit.mark-sexp", () => {
         setEmptyCursors(activeTextEditor, [1, 0]);
         emulator.pushMark(Marker.fromCursor(activeTextEditor.selections));
 
-        await emulator.universalArgument();
-        await emulator.subsequentArgumentDigit(2);
+        await emulator.prefixArgumentHandler.universalArgument();
+        await emulator.prefixArgumentHandler.subsequentArgumentDigit(2);
         await emulator.runCommand("paredit.markSexp");
 
         assertTextEqual(activeTextEditor, initialText);
@@ -361,8 +361,8 @@ suite("paredit.mark-sexp", () => {
         setEmptyCursors(activeTextEditor, [6, 3]);
         emulator.pushMark(Marker.fromCursor(activeTextEditor.selections));
 
-        await emulator.negativeArgument();
-        await emulator.subsequentArgumentDigit(2);
+        await emulator.prefixArgumentHandler.negativeArgument();
+        await emulator.prefixArgumentHandler.subsequentArgumentDigit(2);
         await emulator.runCommand("paredit.markSexp");
 
         assertTextEqual(activeTextEditor, initialText);
@@ -434,8 +434,8 @@ suite("paredit commands with prefix argument", () => {
     test("forwardSexp", async () => {
         setEmptyCursors(activeTextEditor, [0, 2]); // the right to `0`
 
-        await emulator.universalArgument();
-        await emulator.subsequentArgumentDigit(2);
+        await emulator.prefixArgumentHandler.universalArgument();
+        await emulator.prefixArgumentHandler.subsequentArgumentDigit(2);
         await emulator.runCommand("paredit.forwardSexp");
 
         assertSelectionsEqual(activeTextEditor, new Selection(0, 6, 0, 6));
@@ -444,8 +444,8 @@ suite("paredit commands with prefix argument", () => {
     test("backwardSexp", async () => {
         setEmptyCursors(activeTextEditor, [0, 19]); // the left to `9`
 
-        await emulator.universalArgument();
-        await emulator.subsequentArgumentDigit(2);
+        await emulator.prefixArgumentHandler.universalArgument();
+        await emulator.prefixArgumentHandler.subsequentArgumentDigit(2);
         await emulator.runCommand("paredit.backwardSexp");
 
         assertSelectionsEqual(activeTextEditor, new Selection(0, 15, 0, 15));

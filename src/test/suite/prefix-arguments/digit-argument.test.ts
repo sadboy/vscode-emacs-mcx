@@ -4,9 +4,12 @@ import * as sinon from "sinon";
 import { TextEditor } from "vscode";
 import { EmacsEmulator } from "../../../emulator";
 import { assertTextEqual, cleanUpWorkspace, setupWorkspace } from "../utils";
+import { PrefixArgumentHandler } from "../../../prefix-argument";
+import { InputBoxMinibuffer } from "../../../minibuffer";
 
 suite("Digit argument (M-<number>)", () => {
     let activeTextEditor: TextEditor;
+    let prefix: PrefixArgumentHandler;
     let emulator: EmacsEmulator;
 
     setup(() => {
@@ -52,19 +55,25 @@ suite("Digit argument (M-<number>)", () => {
     suite("repeating single character", () => {
         setup(async () => {
             activeTextEditor = await setupWorkspace();
-            emulator = new EmacsEmulator(activeTextEditor);
+            prefix = new PrefixArgumentHandler();
+            emulator = new EmacsEmulator(
+                activeTextEditor,
+                null,
+                new InputBoxMinibuffer(),
+                prefix
+            );
         });
 
         teardown(cleanUpWorkspace);
 
         test("repeating character input for the given argument", async () => {
             resetExecuteCommandSpy();
-            await emulator.digitArgument(3);
+            await prefix.digitArgument(3);
             assertAcceptingArgumentContext(true);
             assertPrefixArgumentContext(3);
 
             resetExecuteCommandSpy();
-            await emulator.subsequentArgumentDigit(2);
+            await prefix.subsequentArgumentDigit(2);
             assertPrefixArgumentContext(32);
 
             resetExecuteCommandSpy();
@@ -76,7 +85,7 @@ suite("Digit argument (M-<number>)", () => {
 
         test("repeating character input for the given argument 0", async () => {
             resetExecuteCommandSpy();
-            await emulator.digitArgument(0);
+            await prefix.digitArgument(0);
             assertAcceptingArgumentContext(true);
             assertPrefixArgumentContext(0);
 
@@ -89,20 +98,20 @@ suite("Digit argument (M-<number>)", () => {
 
         test("C-u stops the digit argument inputs", async () => {
             resetExecuteCommandSpy();
-            await emulator.digitArgument(3);
+            await prefix.digitArgument(3);
             assertAcceptingArgumentContext(true);
             assertPrefixArgumentContext(3);
 
             resetExecuteCommandSpy();
-            await emulator.subsequentArgumentDigit(1);
+            await prefix.subsequentArgumentDigit(1);
             assertPrefixArgumentContext(31);
 
             resetExecuteCommandSpy();
-            await emulator.subsequentArgumentDigit(2);
+            await prefix.subsequentArgumentDigit(2);
             assertPrefixArgumentContext(312);
 
             resetExecuteCommandSpy();
-            await emulator.universalArgument();
+            await prefix.universalArgument();
             assertAcceptingArgumentContext(false);
 
             await emulator.typeChar("3");

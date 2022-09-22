@@ -270,7 +270,7 @@ suite("newLine", () => {
 
                 setEmptyCursors(activeTextEditor, [0, 0]);
 
-                await emulator.universalArgument();
+                await emulator.prefixArgumentHandler.universalArgument();
                 await emulator.runCommand("newLine");
 
                 assertTextEqual(

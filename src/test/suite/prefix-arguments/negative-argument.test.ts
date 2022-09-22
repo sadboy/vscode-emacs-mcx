@@ -4,9 +4,12 @@ import * as sinon from "sinon";
 import { TextEditor } from "vscode";
 import { EmacsEmulator } from "../../../emulator";
 import { assertTextEqual, cleanUpWorkspace, setupWorkspace } from "../utils";
+import { PrefixArgumentHandler } from "../../../prefix-argument";
+import { InputBoxMinibuffer } from "../../../minibuffer";
 
 suite("Negative argument (M--)", () => {
     let activeTextEditor: TextEditor;
+    let prefix: PrefixArgumentHandler;
     let emulator: EmacsEmulator;
 
     setup(() => {
@@ -52,19 +55,25 @@ suite("Negative argument (M--)", () => {
     suite("Negative argument and single character input", () => {
         setup(async () => {
             activeTextEditor = await setupWorkspace();
-            emulator = new EmacsEmulator(activeTextEditor);
+            prefix = new PrefixArgumentHandler();
+            emulator = new EmacsEmulator(
+                activeTextEditor,
+                null,
+                new InputBoxMinibuffer(),
+                prefix
+            );
         });
 
         teardown(cleanUpWorkspace);
 
         test("M-- 3", async () => {
             resetExecuteCommandSpy();
-            await emulator.negativeArgument();
+            await prefix.negativeArgument();
             assertAcceptingArgumentContext(true);
             assertPrefixArgumentContext(-1);
 
             resetExecuteCommandSpy();
-            await emulator.subsequentArgumentDigit(3);
+            await prefix.subsequentArgumentDigit(3);
             assertPrefixArgumentContext(-3);
 
             resetExecuteCommandSpy();
@@ -76,7 +85,7 @@ suite("Negative argument (M--)", () => {
 
         test("C-u - 3", async () => {
             resetExecuteCommandSpy();
-            await emulator.universalArgument();
+            await prefix.universalArgument();
             assertAcceptingArgumentContext(true);
             assertPrefixArgumentContext(4);
 
@@ -85,7 +94,7 @@ suite("Negative argument (M--)", () => {
             assertPrefixArgumentContext(-1);
 
             resetExecuteCommandSpy();
-            await emulator.subsequentArgumentDigit(3);
+            await prefix.subsequentArgumentDigit(3);
             assertPrefixArgumentContext(-3);
 
             resetExecuteCommandSpy();
@@ -97,12 +106,12 @@ suite("Negative argument (M--)", () => {
 
         test("C-u C-u - 3", async () => {
             resetExecuteCommandSpy();
-            await emulator.universalArgument();
+            await prefix.universalArgument();
             assertAcceptingArgumentContext(true);
             assertPrefixArgumentContext(4);
 
             resetExecuteCommandSpy();
-            await emulator.universalArgument();
+            await prefix.universalArgument();
             assertPrefixArgumentContext(16);
 
             resetExecuteCommandSpy();
@@ -110,7 +119,7 @@ suite("Negative argument (M--)", () => {
             assertPrefixArgumentContext(-1);
 
             resetExecuteCommandSpy();
-            await emulator.subsequentArgumentDigit(3);
+            await prefix.subsequentArgumentDigit(3);
             assertPrefixArgumentContext(-3);
 
             resetExecuteCommandSpy();
@@ -122,16 +131,16 @@ suite("Negative argument (M--)", () => {
 
         test("C-u M-- 3", async () => {
             resetExecuteCommandSpy();
-            await emulator.universalArgument();
+            await prefix.universalArgument();
             assertAcceptingArgumentContext(true);
             assertPrefixArgumentContext(4);
 
             resetExecuteCommandSpy();
-            await emulator.negativeArgument();
+            await prefix.negativeArgument();
             assertPrefixArgumentContext(-1);
 
             resetExecuteCommandSpy();
-            await emulator.subsequentArgumentDigit(3);
+            await prefix.subsequentArgumentDigit(3);
             assertPrefixArgumentContext(-3);
 
             resetExecuteCommandSpy();
@@ -143,12 +152,12 @@ suite("Negative argument (M--)", () => {
 
         test("C-u 3 - ('-' is not handled as a minus sign)", async () => {
             resetExecuteCommandSpy();
-            await emulator.universalArgument();
+            await prefix.universalArgument();
             assertAcceptingArgumentContext(true);
             assertPrefixArgumentContext(4);
 
             resetExecuteCommandSpy();
-            await emulator.subsequentArgumentDigit(3);
+            await prefix.subsequentArgumentDigit(3);
             assertPrefixArgumentContext(3);
 
             resetExecuteCommandSpy();

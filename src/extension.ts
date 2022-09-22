@@ -13,7 +13,7 @@ import { PrefixArgumentHandler } from "./prefix-argument";
 interface PrefixableCommand {
     command: string;
     prefixArgumentKey?: string;
-    args?: unknown[];
+    args?: Record<string, unknown>;
 }
 
 function isPrefixableCommandArgs(

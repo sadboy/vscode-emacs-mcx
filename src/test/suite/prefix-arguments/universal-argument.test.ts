@@ -10,8 +10,8 @@ import {
     setEmptyCursors,
     setupWorkspace,
 } from "../utils";
-import { PrefixArgumentHandler } from "src/prefix-argument";
-import { InputBoxMinibuffer } from "src/minibuffer";
+import { PrefixArgumentHandler } from "../../../prefix-argument";
+import { InputBoxMinibuffer } from "../../../minibuffer";
 
 suite("Universal argument (C-u)", () => {
     let activeTextEditor: TextEditor;

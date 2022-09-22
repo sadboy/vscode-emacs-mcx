@@ -366,7 +366,7 @@ export class EmacsEmulator {
 
     public executeCommandWithPrefixArgument<T>(
         command: string,
-        args: unknown[] | undefined,
+        args: Record<string, unknown> | undefined = undefined,
         prefixArgumentKey = "prefixArgument"
     ): Thenable<T | undefined> {
         const prefixArgument = this.prefixArgumentHandler.getPrefixArgument();

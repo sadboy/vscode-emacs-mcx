@@ -318,19 +318,19 @@ ABCDEFGHIJ`;
         await emulator.runCommand("setMarkCommand");
 
         // C-u C-<SPC>.
-        await emulator.universalArgument();
+        await emulator.prefixArgumentHandler.universalArgument();
         await emulator.runCommand("setMarkCommand");
         assertCursorsEqual(activeTextEditor, [2, 6]);
 
-        await emulator.universalArgument();
+        await emulator.prefixArgumentHandler.universalArgument();
         await emulator.runCommand("setMarkCommand");
         assertCursorsEqual(activeTextEditor, [1, 4]);
 
-        await emulator.universalArgument();
+        await emulator.prefixArgumentHandler.universalArgument();
         await emulator.runCommand("setMarkCommand");
         assertCursorsEqual(activeTextEditor, [0, 2]);
 
-        await emulator.universalArgument();
+        await emulator.prefixArgumentHandler.universalArgument();
         await emulator.runCommand("setMarkCommand");
         assertCursorsEqual(activeTextEditor, [2, 6]);
     });

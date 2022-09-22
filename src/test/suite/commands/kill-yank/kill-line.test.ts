@@ -13,9 +13,12 @@ import {
     setEmptyCursors,
     setupWorkspace,
 } from "../../utils";
+import { PrefixArgumentHandler } from "../../../../prefix-argument";
+import { InputBoxMinibuffer } from "../../../../minibuffer";
 
 suite("killLine", () => {
     let activeTextEditor: vscode.TextEditor;
+    let prefix: PrefixArgumentHandler;
     let emulator: EmacsEmulator;
 
     setup(async () => {
@@ -231,14 +234,20 @@ abcdefghij
 
     suite("when prefix argument specified", () => {
         setup(() => {
-            emulator = new EmacsEmulator(activeTextEditor);
+            prefix = new PrefixArgumentHandler();
+            emulator = new EmacsEmulator(
+                activeTextEditor,
+                null,
+                new InputBoxMinibuffer(),
+                prefix
+            );
         });
 
         test("it kills multiple lines and does not leave a blank line (in case the cursor is at the beginning of the line)", async () => {
             setEmptyCursors(activeTextEditor, [0, 0]);
 
-            await emulator.universalArgument();
-            await emulator.subsequentArgumentDigit(2);
+            await prefix.universalArgument();
+            await prefix.subsequentArgumentDigit(2);
 
             await emulator.runCommand("killLine");
 
@@ -259,8 +268,8 @@ abcdefghij
         test("it works in the same way to the default (in case the cursor is NOT at the beginning of the line)", async () => {
             setEmptyCursors(activeTextEditor, [0, 1]);
 
-            await emulator.universalArgument();
-            await emulator.subsequentArgumentDigit(2);
+            await prefix.universalArgument();
+            await prefix.subsequentArgumentDigit(2);
 
             await emulator.runCommand("killLine");
 
@@ -282,6 +291,7 @@ abcdefghij
 
 suite("killLine with kill-whole-line option", () => {
     let activeTextEditor: vscode.TextEditor;
+    let prefix: PrefixArgumentHandler;
     let emulator: EmacsEmulator;
 
     setup(async () => {
@@ -345,14 +355,20 @@ ABCDEFGHIJ`
 
     suite("when prefix argument specified", () => {
         setup(() => {
-            emulator = new EmacsEmulator(activeTextEditor);
+            prefix = new PrefixArgumentHandler();
+            emulator = new EmacsEmulator(
+                activeTextEditor,
+                null,
+                new InputBoxMinibuffer(),
+                prefix
+            );
         });
 
         test("it works in the same way to the default (in case the cursor is at the beginning of the line)", async () => {
             setEmptyCursors(activeTextEditor, [0, 0]);
 
-            await emulator.universalArgument();
-            await emulator.subsequentArgumentDigit(2);
+            await prefix.universalArgument();
+            await prefix.subsequentArgumentDigit(2);
 
             await emulator.runCommand("killLine");
 
@@ -373,8 +389,8 @@ abcdefghij
         test("it works in the same way to the default (in case the cursor is NOT at the beginning of the line)", async () => {
             setEmptyCursors(activeTextEditor, [0, 1]);
 
-            await emulator.universalArgument();
-            await emulator.subsequentArgumentDigit(2);
+            await prefix.universalArgument();
+            await prefix.subsequentArgumentDigit(2);
 
             await emulator.runCommand("killLine");
 
