@@ -11,7 +11,7 @@ interface IRegionText {
     range: Range;
 }
 
-class AppendedRegionTexts {
+export class AppendedRegionTexts {
     /**
      * This class represents a sequence of IRegionTexts appended by kill command.
      * Each element come from one cursor (selection) at single kill.
@@ -25,7 +25,7 @@ class AppendedRegionTexts {
     public append(
         another: AppendedRegionTexts,
         appendDirection: AppendDirection = AppendDirection.Forward
-    ) {
+    ): void {
         if (appendDirection === AppendDirection.Forward) {
             this.regionTexts = this.regionTexts.concat(another.regionTexts);
         } else {
@@ -33,7 +33,7 @@ class AppendedRegionTexts {
         }
     }
 
-    public isEmpty() {
+    public isEmpty(): boolean {
         return this.regionTexts.every((regionText) => regionText.text === "");
     }
 
@@ -99,25 +99,24 @@ export class EditorTextKillRingEntity implements IKillRingEntity {
         return allText;
     }
 
-    public getRegionTextsList() {
+    public getRegionTextsList(): AppendedRegionTexts[] {
         return this.regionTextsList;
     }
 
     public append(
         entity: EditorTextKillRingEntity,
         appendDirection: AppendDirection = AppendDirection.Forward
-    ) {
+    ): void {
         const additional = entity.getRegionTextsList();
         if (additional.length !== this.regionTextsList.length) {
             throw Error("Not appendable");
         }
 
-        this.regionTextsList.map(
+        this.regionTextsList.map((appendedRegionTexts, i) =>
             // `additional.length === this.regionTextsList.length` has already been checked,
             // so noUncheckedIndexedAccess rule can be skipped here.
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            (appendedRegionTexts, i) =>
-                appendedRegionTexts.append(additional[i]!, appendDirection)
+            appendedRegionTexts.append(additional[i]!, appendDirection)
         );
     }
 }

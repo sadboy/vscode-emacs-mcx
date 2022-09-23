@@ -1,45 +1,37 @@
-import { Minibuffer } from "src/minibuffer";
+import { Marker } from "../mark-ring";
+import { Minibuffer } from "../minibuffer";
 import * as vscode from "vscode";
-import { Position, Range, TextEditor } from "vscode";
-import { MessageManager } from "../message";
-import { equalPositions } from "../utils";
+import { Range, TextEditor } from "vscode";
 import { KillRing, KillRingEntity } from "./kill-ring";
 import { ClipboardTextKillRingEntity } from "./kill-ring-entity/clipboard-text";
 import {
+    AppendedRegionTexts,
     AppendDirection,
     EditorTextKillRingEntity,
 } from "./kill-ring-entity/editor-text";
+import { EmacsEmulator } from "src/emulator";
+import assert from "assert";
 
 export { AppendDirection };
 
 export class KillYanker {
+    private emacs: EmacsEmulator;
     private textEditor: TextEditor;
     private readonly killRing: KillRing | null; // If null, killRing is disabled and only clipboard is used.
     private readonly minibuffer: Minibuffer;
 
     private isAppending = false;
-    private prevKillPositions: Position[];
-    private docChangedAfterYank = false;
-    private prevYankPositions: Position[];
+    private prevKillPosition: Marker | undefined;
+    public docChangedAfterYank = false;
 
-    private textChangeCount: number;
-    private prevYankChanges: number;
-
-    constructor(
-        textEditor: TextEditor,
-        killRing: KillRing | null,
-        minibuffer: Minibuffer
-    ) {
-        this.textEditor = textEditor;
-        this.killRing = killRing;
-        this.minibuffer = minibuffer;
+    constructor(emulator: EmacsEmulator) {
+        this.emacs = emulator;
+        this.textEditor = emulator.editor;
+        this.killRing = emulator.killRing;
+        this.minibuffer = emulator.miniBuffer;
 
         this.docChangedAfterYank = false;
-        this.prevKillPositions = [];
-        this.prevYankPositions = [];
-
-        this.textChangeCount = 0; // This is used in yank and yankPop to set `this.prevYankChanges`.
-        this.prevYankChanges = 0; // Indicates how many document changes happened in the previous yank or yankPop. This is usually 1, but can be 2 if auto-indent occurred by formatOnPaste setting.
+        this.prevKillPosition = undefined;
     }
 
     public getTextEditor(): TextEditor {
@@ -56,7 +48,6 @@ export class KillYanker {
     public onDidChangeTextDocument(): void {
         this.docChangedAfterYank = true;
         this.isAppending = false;
-        this.textChangeCount++;
     }
 
     public onDidChangeTextEditorSelection(): void {
@@ -69,7 +60,10 @@ export class KillYanker {
         appendDirection: AppendDirection = AppendDirection.Forward
     ): Promise<void> {
         if (
-            !equalPositions(this.getCursorPositions(), this.prevKillPositions)
+            !this.prevKillPosition ||
+            !this.prevKillPosition.isEqual(
+                Marker.fromCursor(this.textEditor.selections)
+            )
         ) {
             this.isAppending = false;
         }
@@ -79,7 +73,7 @@ export class KillYanker {
         await this.delete(ranges);
 
         this.isAppending = true;
-        this.prevKillPositions = this.getCursorPositions();
+        this.prevKillPosition = Marker.fromCursor(this.textEditor.selections);
     }
 
     public async copy(
@@ -101,13 +95,13 @@ export class KillYanker {
                 currentKill instanceof EditorTextKillRingEntity
             ) {
                 currentKill.append(newKillEntity, appendDirection);
-                await vscode.env.clipboard.writeText(currentKill.asString());
+                return vscode.env.clipboard.writeText(currentKill.asString());
             } else {
                 this.killRing.push(newKillEntity);
-                await vscode.env.clipboard.writeText(newKillEntity.asString());
+                return vscode.env.clipboard.writeText(newKillEntity.asString());
             }
         } else {
-            await vscode.env.clipboard.writeText(newKillEntity.asString());
+            return vscode.env.clipboard.writeText(newKillEntity.asString());
         }
     }
 
@@ -115,42 +109,38 @@ export class KillYanker {
         this.isAppending = false;
     }
 
-    private async paste(killRingEntity: KillRingEntity) {
+    private async paste(killRingEntity: KillRingEntity): Promise<boolean> {
         const flattenedText = killRingEntity.asString();
-
         if (this.minibuffer.isReading) {
             this.minibuffer.paste(flattenedText);
-            return;
+            return true;
         }
 
-        if (killRingEntity.type === "editor") {
-            const selections = this.textEditor.selections;
-            const regionTexts = killRingEntity.getRegionTextsList();
-            const shouldPasteSeparately =
-                regionTexts.length > 1 &&
-                flattenedText.split("\n").length !== regionTexts.length;
-            if (
-                shouldPasteSeparately &&
-                regionTexts.length === selections.length
-            ) {
-                return this.textEditor.edit((editBuilder) => {
-                    selections.forEach((selection, i) => {
-                        if (!selection.isEmpty) {
-                            editBuilder.delete(selection);
-                        }
-                        // `regionTexts.length === selections.length` has already been checked,
-                        // so noUncheckedIndexedAccess rule can be skipped here.
-                        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                        editBuilder.insert(
-                            selection.start,
-                            regionTexts[i]!.getAppendedText()
-                        );
-                    });
-                });
+        const target = this.textEditor.selections;
+        let chunks: readonly AppendedRegionTexts[] | undefined = undefined;
+
+        if (target.length > 1 && killRingEntity.type === "editor") {
+            chunks = killRingEntity.getRegionTextsList();
+            if (chunks.length <= 1 || chunks.length < target.length) {
+                chunks = undefined;
             }
         }
-
-        await vscode.commands.executeCommand("paste", { text: flattenedText });
+        return this.textEditor.edit((editBuilder) => {
+            target.forEach((selection, i) => {
+                if (!selection.isEmpty) {
+                    editBuilder.delete(selection);
+                }
+                editBuilder.insert(
+                    selection.start,
+                    chunks
+                        ? // `chunks.length >= selections.length` has already been checked,
+                          // so noUncheckedIndexedAccess rule can be skipped here.
+                          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                          chunks[i]!.getAppendedText()
+                        : flattenedText
+                );
+            });
+        });
     }
 
     public async yank(): Promise<unknown> {
@@ -164,7 +154,7 @@ export class KillYanker {
         let killRingEntityToPaste = this.killRing.getTop();
 
         if (
-            killRingEntityToPaste == null ||
+            !killRingEntityToPaste ||
             !killRingEntityToPaste.isSameClipboardText(clipboardText)
         ) {
             const newClipboardTextKillRingEntity =
@@ -173,51 +163,41 @@ export class KillYanker {
             killRingEntityToPaste = newClipboardTextKillRingEntity;
         }
 
-        this.textChangeCount = 0;
-        await this.paste(killRingEntityToPaste);
-        this.prevYankChanges = this.textChangeCount;
-
-        this.docChangedAfterYank = false;
-        this.prevYankPositions = this.textEditor.selections.map(
-            (selection) => selection.active
-        );
+        const anchor = Marker.fromAnchor(this.textEditor.selections);
+        if (await this.paste(killRingEntityToPaste)) {
+            this.docChangedAfterYank = false;
+            this.emacs.pushMark(anchor, true, false);
+            this.emacs.deactivateRegion();
+        } else {
+            this.docChangedAfterYank = true;
+        }
     }
 
-    public async yankPop(): Promise<void> {
+    public async yankPop(): Promise<boolean> {
         if (this.killRing === null) {
-            return;
+            return false;
         }
 
-        if (this.isYankInterrupted()) {
-            MessageManager.showMessage("Previous command was not a yank");
-            return;
+        if (this.docChangedAfterYank) {
+            return false;
         }
 
-        const prevKillRingEntity = this.killRing.getTop();
+        assert(this.emacs.mark);
 
         const killRingEntity = this.killRing.popNext();
-        if (killRingEntity == null) {
-            return;
+        if (!killRingEntity) {
+            return false;
         }
-
-        if (
-            prevKillRingEntity != null &&
-            !prevKillRingEntity.isEmpty() &&
-            this.prevYankChanges > 0
-        ) {
-            for (let i = 0; i < this.prevYankChanges; ++i) {
-                await vscode.commands.executeCommand("undo");
-            }
-        }
-
-        this.textChangeCount = 0;
-        await this.paste(killRingEntity);
-        this.prevYankChanges = this.textChangeCount;
-
-        this.docChangedAfterYank = false;
-        this.prevYankPositions = this.textEditor.selections.map(
-            (selection) => selection.active
+        // Activate the region:
+        this.textEditor.selections = this.emacs.mark.toAnchor(
+            this.textEditor.selections
         );
+        if (await this.paste(killRingEntity)) {
+            this.docChangedAfterYank = false;
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private async delete(
@@ -236,18 +216,5 @@ export class KillYanker {
         }
 
         return success;
-    }
-
-    private isYankInterrupted(): boolean {
-        if (this.docChangedAfterYank) {
-            return true;
-        }
-
-        const currentActives = this.getCursorPositions();
-        return !equalPositions(currentActives, this.prevYankPositions);
-    }
-
-    private getCursorPositions(): Position[] {
-        return this.textEditor.selections.map((selection) => selection.active);
     }
 }

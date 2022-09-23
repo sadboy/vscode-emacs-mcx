@@ -80,7 +80,7 @@ export class EmacsEmulator {
         this.afterCommand = this.afterCommand.bind(this);
 
         this.searchState = { startSelections: undefined };
-        this.killYanker = new KillYanker(textEditor, killRing, minibuffer);
+        this.killYanker = new KillYanker(this);
     }
 
     public onDidChangeTextDocument(e: vscode.TextDocumentChangeEvent): void {

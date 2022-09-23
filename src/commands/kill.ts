@@ -13,6 +13,7 @@ import {
     findPreviousWordStart,
 } from "./helpers/wordOperations";
 import { revealPrimaryActive } from "./helpers/reveal";
+import { MessageManager } from "../message";
 
 function getWordSeparators(): WordCharacterClassifier {
     // Ref: https://github.com/VSCodeVim/Vim/blob/91ca71f8607458c0558f9aff61e230c6917d4b51/src/configuration/configuration.ts#L155
@@ -249,7 +250,6 @@ export class Yank extends KillYankCommand {
         isInMarkMode: boolean,
         prefixArgument: number | undefined
     ): Promise<void> {
-        this.emacs.pushMark();
         await this.killYanker.yank();
         this.emacs.deactivateMark();
         revealPrimaryActive(textEditor);
@@ -264,8 +264,16 @@ export class YankPop extends KillYankCommand {
         isInMarkMode: boolean,
         prefixArgument: number | undefined
     ): Promise<void> {
-        await this.killYanker.yankPop();
-        this.emacs.deactivateMark();
-        revealPrimaryActive(textEditor);
+        if (
+            !this.emacs.killYanker.docChangedAfterYank &&
+            (this.emacs.lastCommand === Yank.id ||
+                this.emacs.lastCommand === YankPop.id)
+        ) {
+            await this.killYanker.yankPop();
+            this.emacs.deactivateMark();
+            revealPrimaryActive(textEditor);
+        } else {
+            MessageManager.showMessage("Previous command was not a yank");
+        }
     }
 }
