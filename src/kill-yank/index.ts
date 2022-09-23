@@ -2,17 +2,12 @@ import { Marker } from "../mark-ring";
 import { Minibuffer } from "../minibuffer";
 import * as vscode from "vscode";
 import { Range, TextEditor } from "vscode";
-import { KillRing, KillRingEntity } from "./kill-ring";
+import { IKillRingEntity, KillRing } from "./kill-ring";
 import { ClipboardTextKillRingEntity } from "./kill-ring-entity/clipboard-text";
-import {
-    AppendedRegionTexts,
-    AppendDirection,
-    EditorTextKillRingEntity,
-} from "./kill-ring-entity/editor-text";
+import { AppendableRegionTexts, AppendDirection } from "./kill-ring";
 import { EmacsEmulator } from "src/emulator";
 import assert from "assert";
-
-export { AppendDirection };
+import { EditorTextKillRingEntity } from "./kill-ring-entity/editor-text";
 
 export class KillYanker {
     private emacs: EmacsEmulator;
@@ -109,7 +104,7 @@ export class KillYanker {
         this.isAppending = false;
     }
 
-    private async paste(killRingEntity: KillRingEntity): Promise<boolean> {
+    private async paste(killRingEntity: IKillRingEntity): Promise<boolean> {
         const flattenedText = killRingEntity.asString();
         if (this.minibuffer.isReading) {
             this.minibuffer.paste(flattenedText);
@@ -117,10 +112,10 @@ export class KillYanker {
         }
 
         const target = this.textEditor.selections;
-        let chunks: readonly AppendedRegionTexts[] | undefined = undefined;
+        let chunks: readonly AppendableRegionTexts[] | undefined = undefined;
 
         if (target.length > 1 && killRingEntity.type === "editor") {
-            chunks = killRingEntity.getRegionTextsList();
+            chunks = killRingEntity.getRegionTexts();
             if (chunks.length <= 1 || chunks.length < target.length) {
                 chunks = undefined;
             }
@@ -151,25 +146,36 @@ export class KillYanker {
         }
 
         const clipboardText = await vscode.env.clipboard.readText();
-        let killRingEntityToPaste = this.killRing.getTop();
+        const killRingEntityToPaste = this.killRing.getZero();
 
         if (
             !killRingEntityToPaste ||
             !killRingEntityToPaste.isSameClipboardText(clipboardText)
         ) {
-            const newClipboardTextKillRingEntity =
-                new ClipboardTextKillRingEntity(clipboardText);
-            this.killRing.push(newClipboardTextKillRingEntity);
-            killRingEntityToPaste = newClipboardTextKillRingEntity;
+            this.killRing.push(new ClipboardTextKillRingEntity(clipboardText));
         }
 
+        return this.yankTop();
+    }
+
+    public async yankTop(): Promise<boolean> {
+        if (this.killRing === null) {
+            return false;
+        }
+
+        const item = this.killRing.getTop();
+
+        assert(item);
+
         const anchor = Marker.fromAnchor(this.textEditor.selections);
-        if (await this.paste(killRingEntityToPaste)) {
+        if (await this.paste(item)) {
             this.docChangedAfterYank = false;
             this.emacs.pushMark(anchor, true, false);
             this.emacs.deactivateRegion();
+            return true;
         } else {
             this.docChangedAfterYank = true;
+            return false;
         }
     }
 

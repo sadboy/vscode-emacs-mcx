@@ -2,10 +2,10 @@ import * as paredit from "paredit.js";
 import { TextDocument, Selection, Range, TextEditor, Position } from "vscode";
 import { EmacsCommand } from ".";
 import { KillYankCommand } from "./kill";
-import { AppendDirection } from "../kill-yank";
 import { revealPrimaryActive } from "./helpers/reveal";
-import { EmacsEmulator } from "src/emulator";
+import { EmacsEmulator } from "../emulator";
 import assert from "assert";
+import { AppendDirection } from "../kill-yank/kill-ring";
 
 type PareditNavigatorFn = (ast: paredit.AST, idx: number) => number;
 

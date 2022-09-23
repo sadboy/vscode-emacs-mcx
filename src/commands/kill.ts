@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import { Position, Range, TextDocument, TextEditor } from "vscode";
 import { EmacsCommand } from ".";
 import { EmacsEmulator } from "../emulator";
-import { AppendDirection, KillYanker } from "../kill-yank";
+import { KillYanker } from "../kill-yank";
 import { Configuration } from "../configuration/configuration";
 import {
     WordCharacterClassifier,
@@ -14,6 +14,7 @@ import {
 } from "./helpers/wordOperations";
 import { revealPrimaryActive } from "./helpers/reveal";
 import { MessageManager } from "../message";
+import { AppendDirection } from "../kill-yank/kill-ring";
 
 function getWordSeparators(): WordCharacterClassifier {
     // Ref: https://github.com/VSCodeVim/Vim/blob/91ca71f8607458c0558f9aff61e230c6917d4b51/src/configuration/configuration.ts#L155
@@ -272,6 +273,18 @@ export class YankPop extends KillYankCommand {
             await this.killYanker.yankPop();
             this.emacs.deactivateMark();
             revealPrimaryActive(textEditor);
+        } else if (this.emacs.killRing) {
+            const selected = await vscode.window.showQuickPick(
+                this.emacs.killRing.getRing(),
+                {
+                    title: "Kill Ring",
+                    canPickMany: false,
+                }
+            );
+            if (selected) {
+                this.emacs.killRing.setTop(selected);
+                await this.killYanker.yankTop();
+            }
         } else {
             MessageManager.showMessage("Previous command was not a yank");
         }

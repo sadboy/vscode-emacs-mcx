@@ -1,59 +1,36 @@
-import { Range } from "vscode";
-import { IKillRingEntity } from "./kill-ring-entity";
-
-export enum AppendDirection {
-    Forward,
-    Backward,
-}
-
-interface IRegionText {
-    text: string;
-    range: Range;
-}
-
-export class AppendedRegionTexts {
-    /**
-     * This class represents a sequence of IRegionTexts appended by kill command.
-     * Each element come from one cursor (selection) at single kill.
-     */
-    private regionTexts: IRegionText[];
-
-    constructor(regionText: IRegionText) {
-        this.regionTexts = [regionText];
-    }
-
-    public append(
-        another: AppendedRegionTexts,
-        appendDirection: AppendDirection = AppendDirection.Forward
-    ): void {
-        if (appendDirection === AppendDirection.Forward) {
-            this.regionTexts = this.regionTexts.concat(another.regionTexts);
-        } else {
-            this.regionTexts = another.regionTexts.concat(this.regionTexts);
-        }
-    }
-
-    public isEmpty(): boolean {
-        return this.regionTexts.every((regionText) => regionText.text === "");
-    }
-
-    public getAppendedText(): string {
-        return this.regionTexts.map((regionText) => regionText.text).join("");
-    }
-
-    public getLastRange(): Range {
-        return this.regionTexts[this.regionTexts.length - 1]!.range; // eslint-disable-line @typescript-eslint/no-non-null-assertion
-    }
-}
+import { QuickPickItemKind, QuickInputButton } from "vscode";
+import {
+    AppendableRegionTexts,
+    AppendDirection,
+    IKillRingEntity,
+    IRegionText,
+} from "../kill-ring";
 
 export class EditorTextKillRingEntity implements IKillRingEntity {
     public readonly type = "editor";
-    private regionTextsList: AppendedRegionTexts[];
+    public picked = false;
+
+    private regionTextsList: AppendableRegionTexts[];
 
     constructor(regionTexts: IRegionText[]) {
         this.regionTextsList = regionTexts.map(
-            (regionText) => new AppendedRegionTexts(regionText)
+            (regionText) => new AppendableRegionTexts(regionText)
         );
+    }
+    private _flattened: string | undefined = undefined;
+    private _label: string | undefined = undefined;
+
+    kind?: QuickPickItemKind | undefined;
+    description?: string | undefined;
+    detail?: string | undefined;
+    alwaysShow?: boolean | undefined;
+    buttons?: readonly QuickInputButton[] | undefined;
+
+    public get label(): string {
+        if (!this._label) {
+            this._label = "$(edit)" + JSON.stringify(this.asString());
+        }
+        return this._label;
     }
 
     public isSameClipboardText(clipboardText: string): boolean {
@@ -66,40 +43,41 @@ export class EditorTextKillRingEntity implements IKillRingEntity {
         );
     }
 
-    // TODO: Cache the result of this method because it is called repeatedly
     public asString(): string {
-        const appendedTexts = this.regionTextsList.map(
-            (appendedRegionTexts) => ({
-                range: appendedRegionTexts.getLastRange(),
-                text: appendedRegionTexts.getAppendedText(),
-            })
-        );
+        if (!this._flattened) {
+            const appendedTexts = this.regionTextsList.map(
+                (appendedRegionTexts) => ({
+                    range: appendedRegionTexts.getLastRange(),
+                    text: appendedRegionTexts.getAppendedText(),
+                })
+            );
 
-        const sortedAppendedTexts = appendedTexts.sort((a, b) => {
-            if (a.range.start.line === b.range.start.line) {
-                return a.range.start.character - b.range.start.character;
-            } else {
-                return a.range.start.line - b.range.start.line;
-            }
-        });
+            const sortedAppendedTexts = appendedTexts.sort((a, b) => {
+                if (a.range.start.line === b.range.start.line) {
+                    return a.range.start.character - b.range.start.character;
+                } else {
+                    return a.range.start.line - b.range.start.line;
+                }
+            });
 
-        let allText = "";
-        sortedAppendedTexts.forEach((item, i) => {
-            const prevItem = sortedAppendedTexts[i - 1];
-            if (
-                prevItem &&
-                prevItem.range.start.line !== item.range.start.line
-            ) {
-                allText += "\n" + item.text;
-            } else {
-                allText += item.text;
-            }
-        });
-
-        return allText;
+            let allText = "";
+            sortedAppendedTexts.forEach((item, i) => {
+                const prevItem = sortedAppendedTexts[i - 1];
+                if (
+                    prevItem &&
+                    prevItem.range.start.line !== item.range.start.line
+                ) {
+                    allText += "\n" + item.text;
+                } else {
+                    allText += item.text;
+                }
+            });
+            this._flattened = allText;
+        }
+        return this._flattened;
     }
 
-    public getRegionTextsList(): AppendedRegionTexts[] {
+    public getRegionTexts(): AppendableRegionTexts[] {
         return this.regionTextsList;
     }
 
@@ -107,7 +85,7 @@ export class EditorTextKillRingEntity implements IKillRingEntity {
         entity: EditorTextKillRingEntity,
         appendDirection: AppendDirection = AppendDirection.Forward
     ): void {
-        const additional = entity.getRegionTextsList();
+        const additional = entity.getRegionTexts();
         if (additional.length !== this.regionTextsList.length) {
             throw Error("Not appendable");
         }
