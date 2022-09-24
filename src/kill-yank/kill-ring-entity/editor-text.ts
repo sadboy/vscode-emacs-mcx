@@ -96,5 +96,7 @@ export class EditorTextKillRingEntity implements IKillRingEntity {
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             appendedRegionTexts.append(additional[i]!, appendDirection)
         );
+        this._flattened = undefined;
+        this._label = undefined;
     }
 }

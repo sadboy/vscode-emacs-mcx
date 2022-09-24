@@ -130,7 +130,6 @@ export class KillYanker {
                     chunks
                         ? // `chunks.length >= selections.length` has already been checked,
                           // so noUncheckedIndexedAccess rule can be skipped here.
-                          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                           chunks[i]!.getAppendedText()
                         : flattenedText
                 );
