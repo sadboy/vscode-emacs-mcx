@@ -1,40 +1,22 @@
-import { QuickPickItemKind, QuickInputButton } from "vscode";
 import {
     AppendableRegionTexts,
     AppendDirection,
-    IKillRingEntity,
     IRegionText,
+    KillRingEntityBase,
 } from "../kill-ring";
 
-export class EditorTextKillRingEntity implements IKillRingEntity {
+export class EditorTextKillRingEntity extends KillRingEntityBase {
     public readonly type = "editor";
-    public picked = false;
+    protected readonly icon = "$(edit)";
 
     private regionTextsList: AppendableRegionTexts[];
+    private _flattened: string | undefined = undefined;
 
     constructor(regionTexts: IRegionText[]) {
+        super();
         this.regionTextsList = regionTexts.map(
             (regionText) => new AppendableRegionTexts(regionText)
         );
-    }
-    private _flattened: string | undefined = undefined;
-    private _label: string | undefined = undefined;
-
-    kind?: QuickPickItemKind | undefined;
-    description?: string | undefined;
-    detail?: string | undefined;
-    alwaysShow?: boolean | undefined;
-    buttons?: readonly QuickInputButton[] | undefined;
-
-    public get label(): string {
-        if (!this._label) {
-            this._label = "$(edit)" + JSON.stringify(this.asString());
-        }
-        return this._label;
-    }
-
-    public isSameClipboardText(clipboardText: string): boolean {
-        return this.asString() === clipboardText;
     }
 
     public isEmpty(): boolean {
@@ -44,7 +26,7 @@ export class EditorTextKillRingEntity implements IKillRingEntity {
     }
 
     public asString(): string {
-        if (!this._flattened) {
+        if (this._flattened === undefined) {
             const appendedTexts = this.regionTextsList.map(
                 (appendedRegionTexts) => ({
                     range: appendedRegionTexts.getLastRange(),

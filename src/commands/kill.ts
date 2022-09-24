@@ -267,9 +267,9 @@ export class YankPop extends KillYankCommand {
     ): Promise<void> {
         if (
             !this.emacs.killYanker.docChangedAfterYank &&
-            (this.emacs.lastCommand === Yank.id ||
-                this.emacs.lastCommand === YankPop.id)
+            this.emacs.lastCommand === Yank.id
         ) {
+            this.emacs.thisCommand = Yank.id;
             await this.killYanker.yankPop();
             this.emacs.deactivateMark();
             revealPrimaryActive(textEditor);

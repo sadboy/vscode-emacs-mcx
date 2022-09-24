@@ -1,37 +1,18 @@
-import { QuickPickItemKind, QuickInputButton } from "vscode";
-import { AppendableRegionTexts, IKillRingEntity } from "../kill-ring";
+import { AppendableRegionTexts, KillRingEntityBase } from "../kill-ring";
 
-export class ClipboardTextKillRingEntity implements IKillRingEntity {
+export class ClipboardTextKillRingEntity extends KillRingEntityBase {
     public readonly type = "clipboard";
-
-    public picked = false;
+    protected readonly icon = "$(clone)";
 
     private readonly text: string;
-    private _label: string | undefined = undefined;
 
     constructor(clipboardText: string) {
+        super();
         this.text = clipboardText;
     }
 
     public getRegionTexts(): readonly AppendableRegionTexts[] {
         return [];
-    }
-
-    public get label(): string {
-        if (this._label === undefined) {
-            this._label = "$(clone)" + JSON.stringify(this.asString());
-        }
-        return this._label;
-    }
-
-    kind?: QuickPickItemKind | undefined;
-    description?: string | undefined;
-    detail?: string | undefined;
-    alwaysShow?: boolean | undefined;
-    buttons?: readonly QuickInputButton[] | undefined;
-
-    public isSameClipboardText(clipboardText: string): boolean {
-        return clipboardText === this.text;
     }
 
     public isEmpty(): boolean {

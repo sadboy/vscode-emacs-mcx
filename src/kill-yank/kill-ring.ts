@@ -1,4 +1,9 @@
-import { QuickPickItem, Range } from "vscode";
+import {
+    QuickInputButton,
+    QuickPickItem,
+    QuickPickItemKind,
+    Range,
+} from "vscode";
 
 export enum AppendDirection {
     Forward,
@@ -41,7 +46,7 @@ export class AppendableRegionTexts {
     }
 
     public getLastRange(): Range {
-        return this.regionTexts[this.regionTexts.length - 1]!.range; // eslint-disable-line @typescript-eslint/no-non-null-assertion
+        return this.regionTexts[this.regionTexts.length - 1]!.range;
     }
 }
 
@@ -51,6 +56,43 @@ export interface IKillRingEntity extends QuickPickItem {
     isEmpty(): boolean;
     asString(): string;
     getRegionTexts(): readonly AppendableRegionTexts[];
+}
+
+export abstract class KillRingEntityBase implements IKillRingEntity {
+    // Perf trade-off: this limits the filterable portion of the kill ring
+    // entity, but prevents really large copies from slowing down the UI:
+    public static MAX_LABEL_LENGTH = 12000;
+
+    public abstract type: string;
+    public abstract isEmpty(): boolean;
+    public abstract asString(): string;
+    public abstract getRegionTexts(): readonly AppendableRegionTexts[];
+
+    protected abstract icon: string;
+
+    protected _label: string | undefined = undefined;
+
+    kind?: QuickPickItemKind | undefined;
+    description?: string | undefined;
+    detail?: string | undefined;
+    picked?: boolean | undefined;
+    alwaysShow?: boolean | undefined;
+    buttons?: readonly QuickInputButton[] | undefined;
+
+    public get label(): string {
+        if (this._label === undefined) {
+            let label = JSON.stringify(this.asString());
+            if (label.length > KillRingEntityBase.MAX_LABEL_LENGTH) {
+                label = label.substring(0, KillRingEntityBase.MAX_LABEL_LENGTH);
+            }
+            this._label = this.icon.concat(label);
+        }
+        return this._label;
+    }
+
+    public isSameClipboardText(clipboardText: string): boolean {
+        return this.asString() === clipboardText;
+    }
 }
 
 export class KillRing {
