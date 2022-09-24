@@ -20,6 +20,7 @@
     "rules": {
         "@typescript-eslint/no-unused-vars": ["error", {
             "argsIgnorePattern": "textEditor|isInMarkMode|prefixArgument"
-        }]
+        }],
+        "@typescript-eslint/no-non-null-assertion": "off"
     }
 }
