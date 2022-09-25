@@ -413,7 +413,7 @@ export class EmacsEmulator {
                 }
 
                 return (
-                    (lastVisibleRange.end.line -
+                    (lastVisibleRange.end.line +
                         firstVisibleRange.start.line) >>
                     1
                 );
@@ -424,9 +424,13 @@ export class EmacsEmulator {
     public moveCursorToWindowLine(target: WindowPosition): void {
         const toLine = this.getWindowLine(target);
 
-        if (toLine) {
+        if (toLine !== undefined) {
             const position = new Position(toLine, 0);
-            this.editor.selections = [new Selection(position, position)];
+            let newSelections = [new Selection(position, position)];
+            if (this.isMarkActive()) {
+                newSelections = this.mark.toAnchor(newSelections);
+            }
+            this.editor.selections = newSelections;
         }
     }
 
