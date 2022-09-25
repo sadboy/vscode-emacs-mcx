@@ -1,9 +1,4 @@
-import {
-    QuickInputButton,
-    QuickPickItem,
-    QuickPickItemKind,
-    Range,
-} from "vscode";
+import { QuickPickItem, Range } from "vscode";
 
 export enum AppendDirection {
     Forward,
@@ -50,12 +45,13 @@ export class AppendableRegionTexts {
     }
 }
 
-export interface IKillRingEntity extends QuickPickItem {
+export interface IKillRingEntity {
     type: string;
     isSameClipboardText(clipboardText: string): boolean;
     isEmpty(): boolean;
     asString(): string;
     getRegionTexts(): readonly AppendableRegionTexts[];
+    getLabel(): string;
 }
 
 export abstract class KillRingEntityBase implements IKillRingEntity {
@@ -72,14 +68,7 @@ export abstract class KillRingEntityBase implements IKillRingEntity {
 
     protected _label: string | undefined = undefined;
 
-    kind?: QuickPickItemKind | undefined;
-    description?: string | undefined;
-    detail?: string | undefined;
-    picked?: boolean | undefined;
-    alwaysShow?: boolean | undefined;
-    buttons?: readonly QuickInputButton[] | undefined;
-
-    public get label(): string {
+    public getLabel(): string {
         if (this._label === undefined) {
             let label = JSON.stringify(this.asString());
             if (label.length > KillRingEntityBase.MAX_LABEL_LENGTH) {
@@ -93,6 +82,10 @@ export abstract class KillRingEntityBase implements IKillRingEntity {
     public isSameClipboardText(clipboardText: string): boolean {
         return this.asString() === clipboardText;
     }
+}
+
+interface IKillRingQuickPickItem extends QuickPickItem {
+    index: number;
 }
 
 export class KillRing {
@@ -138,21 +131,21 @@ export class KillRing {
         }
         if (this.pointer < 0) {
             this.pointer = 0;
-        } else {
-            this._killRing[this.pointer]!.picked = false;
         }
 
         this.pointer = (this.pointer + 1) % this._killRing.length;
         return this._killRing[this.pointer];
     }
 
-    public setTop(item: IKillRingEntity): void {
-        this.pointer = this._killRing.indexOf(item);
+    public setTop(item: IKillRingQuickPickItem): void {
+        this.pointer = item.index % this._killRing.length;
     }
 
-    public getRing(): readonly IKillRingEntity[] {
-        return this._killRing
-            .slice(this.pointer)
-            .concat(this._killRing.slice(0, this.pointer));
+    public getRingAsQuickPickItems(): IKillRingQuickPickItem[] {
+        const items = this._killRing.map((entity, idx) => ({
+            label: entity.getLabel(),
+            index: idx,
+        }));
+        return items.slice(this.pointer).concat(items.slice(0, this.pointer));
     }
 }

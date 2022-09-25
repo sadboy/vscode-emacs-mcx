@@ -232,8 +232,7 @@ export class CopyRegion extends KillYankCommand {
         isInMarkMode: boolean,
         prefixArgument: number | undefined
     ): Promise<void> {
-        const controller = this.emacs;
-        const ranges = controller
+        const ranges = this.emacs
             .getRegion()
             .filter((selection) => !selection.isEmpty);
         await this.killYanker.copy(ranges);
@@ -275,7 +274,7 @@ export class YankPop extends KillYankCommand {
             revealPrimaryActive(textEditor);
         } else if (this.emacs.killRing) {
             const selected = await vscode.window.showQuickPick(
-                this.emacs.killRing.getRing(),
+                this.emacs.killRing.getRingAsQuickPickItems(),
                 {
                     title: "Kill Ring",
                     canPickMany: false,

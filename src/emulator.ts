@@ -356,11 +356,11 @@ export class EmacsEmulator {
     }
 
     public deactivateMark(andRegion = true): void {
+        if (andRegion) {
+            this.deactivateRegion();
+        }
         if (this.isMarkActive()) {
             this._isMarkActive = false;
-            if (andRegion) {
-                this.deactivateRegion();
-            }
             vscode.commands.executeCommand(
                 "setContext",
                 "emacs-mcx.inMarkMode",
