@@ -39,6 +39,7 @@ const _CommandRegister = new Map(
         MoveCommands.ScrollDownCommand,
         MoveCommands.ForwardParagraph,
         MoveCommands.BackwardParagraph,
+        MoveCommands.MoveToWindowLineTopBottomCommand,
         EditCommands.DeleteBackwardChar,
         EditCommands.DeleteForwardChar,
         EditCommands.NewLine,

@@ -1,17 +1,12 @@
+import { WindowPosition } from "../emulator";
 import * as vscode from "vscode";
 import { TextEditor, TextEditorRevealType } from "vscode";
 import { EmacsCommand } from ".";
 
-enum RecenterPosition {
-    Middle,
-    Top,
-    Bottom,
-}
-
 export class RecenterTopBottom extends EmacsCommand {
     public static readonly id = "recenterTopBottom";
 
-    private recenterPosition: RecenterPosition = RecenterPosition.Middle;
+    private recenterPosition: WindowPosition = WindowPosition.Center;
 
     public async execute(
         textEditor: TextEditor,
@@ -19,7 +14,7 @@ export class RecenterTopBottom extends EmacsCommand {
         prefixArgument: number | undefined
     ): Promise<void> {
         if (this.emacs.lastCommand !== RecenterTopBottom.id) {
-            this.recenterPosition = RecenterPosition.Middle;
+            this.recenterPosition = WindowPosition.Center;
         }
 
         const activeRange = new vscode.Range(
@@ -28,20 +23,20 @@ export class RecenterTopBottom extends EmacsCommand {
         );
 
         switch (this.recenterPosition) {
-            case RecenterPosition.Middle: {
+            case WindowPosition.Center: {
                 textEditor.revealRange(
                     activeRange,
                     TextEditorRevealType.InCenter
                 );
-                this.recenterPosition = RecenterPosition.Top;
+                this.recenterPosition = WindowPosition.Top;
                 break;
             }
-            case RecenterPosition.Top: {
+            case WindowPosition.Top: {
                 textEditor.revealRange(activeRange, TextEditorRevealType.AtTop);
-                this.recenterPosition = RecenterPosition.Bottom;
+                this.recenterPosition = WindowPosition.Bottom;
                 break;
             }
-            case RecenterPosition.Bottom: {
+            case WindowPosition.Bottom: {
                 // TextEditor.revealRange does not support to set the cursor at the bottom of window.
                 // Therefore, the number of lines to scroll is calculated here.
                 const visibleRange = textEditor.visibleRanges[0];
@@ -61,7 +56,7 @@ export class RecenterTopBottom extends EmacsCommand {
                 const r = new vscode.Range(p, p);
                 textEditor.revealRange(r);
 
-                this.recenterPosition = RecenterPosition.Middle;
+                this.recenterPosition = WindowPosition.Center;
                 break;
             }
         }

@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { Selection, TextDocument, TextEditor } from "vscode";
+import { Position, Selection, TextDocument, TextEditor } from "vscode";
 import { EmacsCommandRegistry } from "./commands/registry";
 import { KillYanker } from "./kill-yank";
 import { KillRing } from "./kill-yank/kill-ring";
@@ -14,6 +14,12 @@ import assert from "assert";
 
 export interface SearchState {
     startSelections: readonly vscode.Selection[] | undefined;
+}
+
+export enum WindowPosition {
+    Top = 1,
+    Center = 2,
+    Bottom = 3,
 }
 
 export class EmacsEmulator {
@@ -379,6 +385,32 @@ export class EmacsEmulator {
 
     public getPrefixArgument(): number | undefined {
         return this.prefixArgumentHandler.getPrefixArgument();
+    }
+
+    public moveCursorToWindowLine(target: WindowPosition): void {
+        const visibleRange = this.editor.visibleRanges[0];
+        if (!visibleRange) {
+            return;
+        }
+
+        let position: Position;
+        switch (target) {
+            case WindowPosition.Top: {
+                position = new Position(visibleRange.start.line, 0);
+                break;
+            }
+            case WindowPosition.Bottom: {
+                position = new Position(visibleRange.end.line, 0);
+                break;
+            }
+            default: {
+                const midLine =
+                    (visibleRange.end.line + visibleRange.start.line) >> 1;
+                position = new Position(midLine, 0);
+                break;
+            }
+        }
+        this.editor.selections = [new Selection(position, position)];
     }
 
     public activateRegion(): void {

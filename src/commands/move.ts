@@ -1,3 +1,4 @@
+import { WindowPosition } from "../emulator";
 import * as vscode from "vscode";
 import { TextEditor } from "vscode";
 import { createParallel, EmacsCommand } from ".";
@@ -483,5 +484,37 @@ export class BackwardParagraph extends EmacsCommand {
         });
         textEditor.selections = newSelections;
         revealPrimaryActive(textEditor);
+    }
+}
+
+export class MoveToWindowLineTopBottomCommand extends EmacsCommand {
+    public static readonly id = "moveToWindowLineTopBottom";
+
+    private targetPosition = WindowPosition.Center;
+
+    public async execute(
+        textEditor: vscode.TextEditor,
+        isInMarkMode: boolean,
+        prefixArgument: number | undefined
+    ): Promise<void> {
+        if (this.emacs.lastCommand !== MoveToWindowLineTopBottomCommand.id) {
+            this.targetPosition = WindowPosition.Center;
+        } else {
+            switch (this.targetPosition) {
+                case WindowPosition.Center: {
+                    this.targetPosition = WindowPosition.Top;
+                    break;
+                }
+                case WindowPosition.Top: {
+                    this.targetPosition = WindowPosition.Bottom;
+                    break;
+                }
+                case WindowPosition.Bottom: {
+                    this.targetPosition = WindowPosition.Center;
+                    break;
+                }
+            }
+        }
+        return this.emacs.moveCursorToWindowLine(this.targetPosition);
     }
 }
