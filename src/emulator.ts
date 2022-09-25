@@ -302,7 +302,7 @@ export class EmacsEmulator {
     }
 
     public activateMark(nomsg = false): void {
-        if (!this.isMarkActive) {
+        if (!this.isMarkActive()) {
             this._isMarkActive = true;
 
             // At this moment, the only way to set the context for `when` conditions is `setContext` command.
