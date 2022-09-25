@@ -387,30 +387,47 @@ export class EmacsEmulator {
         return this.prefixArgumentHandler.getPrefixArgument();
     }
 
-    public moveCursorToWindowLine(target: WindowPosition): void {
-        const visibleRange = this.editor.visibleRanges[0];
-        if (!visibleRange) {
-            return;
-        }
+    public getWindowLine(position: WindowPosition): number | undefined {
+        const firstVisibleRange = this.editor.visibleRanges[0];
+        const lastVisibleRange =
+            this.editor.visibleRanges[this.editor.visibleRanges.length - 1];
 
-        let position: Position;
-        switch (target) {
+        switch (position) {
             case WindowPosition.Top: {
-                position = new Position(visibleRange.start.line, 0);
-                break;
+                if (!firstVisibleRange) {
+                    return undefined;
+                }
+
+                return firstVisibleRange.start.line;
             }
             case WindowPosition.Bottom: {
-                position = new Position(visibleRange.end.line, 0);
-                break;
+                if (!lastVisibleRange) {
+                    return undefined;
+                }
+
+                return lastVisibleRange.end.line;
             }
-            default: {
-                const midLine =
-                    (visibleRange.end.line + visibleRange.start.line) >> 1;
-                position = new Position(midLine, 0);
-                break;
+            case WindowPosition.Center: {
+                if (!firstVisibleRange || !lastVisibleRange) {
+                    return undefined;
+                }
+
+                return (
+                    (lastVisibleRange.end.line -
+                        firstVisibleRange.start.line) >>
+                    1
+                );
             }
         }
-        this.editor.selections = [new Selection(position, position)];
+    }
+
+    public moveCursorToWindowLine(target: WindowPosition): void {
+        const toLine = this.getWindowLine(target);
+
+        if (toLine) {
+            const position = new Position(toLine, 0);
+            this.editor.selections = [new Selection(position, position)];
+        }
     }
 
     public activateRegion(): void {
