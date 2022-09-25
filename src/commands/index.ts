@@ -20,7 +20,7 @@ export abstract class EmacsCommand {
     public async run(...args: unknown[]): Promise<unknown> {
         return this.execute(
             this.emacs.editor,
-            this.emacs.isMarkActive,
+            this.emacs.isMarkActive(),
             this.emacs.prefixArgumentHandler.getPrefixArgument(),
             ...args
         );

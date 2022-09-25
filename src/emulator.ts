@@ -41,11 +41,11 @@ export class EmacsEmulator {
         return this.markRing.getTop();
     }
 
-    public get isMarkActive(): boolean {
+    public isMarkActive(): this is { mark: Marker } {
         return this._isMarkActive;
     }
 
-    public get isRegionActive(): boolean {
+    public isRegionActive(): boolean {
         return this._editor.selections.some((selection) => !selection.isEmpty);
     }
 
@@ -155,7 +155,7 @@ export class EmacsEmulator {
     }
 
     private _syncEditorState(): void {
-        if (this.isRegionActive) {
+        if (this.isRegionActive()) {
             const mark = Marker.fromAnchor(this.editor.selections);
             // Replace the current mark:
             this.markRing.push(mark, true);
@@ -167,16 +167,15 @@ export class EmacsEmulator {
     }
 
     private _syncMarkAndSelection(): void {
-        if (this.isRegionActive) {
+        if (this.isRegionActive()) {
             // Outside command activated region, update our mark to match:
             const mark = Marker.fromAnchor(this.editor.selections);
             this.activateMark();
             if (!this.mark || !mark.isEqual(this.mark)) {
                 this.pushMark(mark);
             }
-        } else if (this.isMarkActive) {
+        } else if (this.isMarkActive()) {
             // Mark is active but outside command deactivated region, so we reactivate:
-            assert(this.mark !== undefined);
             this._editor.selections = this.mark.toAnchor(
                 this._editor.selections
             );
@@ -188,7 +187,7 @@ export class EmacsEmulator {
      * An extended version of the native `type` command with prefix argument integration.
      */
     public typeChar(char: string): void | Thenable<unknown> {
-        if (this.isMarkActive) {
+        if (this.isMarkActive()) {
             this.deactivateMark();
         }
 
@@ -282,7 +281,7 @@ export class EmacsEmulator {
     public cancel(): void {
         this.thisCommand = "cancel";
 
-        if (this.isMarkActive || this.isRegionActive) {
+        if (this.isMarkActive() || this.isRegionActive()) {
             this.deactivateMark();
         } else {
             this.cancelMultiCursor();
@@ -339,7 +338,7 @@ export class EmacsEmulator {
         if (this.mark) {
             const cursor = Marker.fromCursor(this._editor.selections);
             let newSelections = this.mark.toCursor(this._editor.selections);
-            if (this.isMarkActive) {
+            if (this.isMarkActive()) {
                 newSelections = cursor.toAnchor(newSelections);
             }
             this._editor.selections = newSelections;
@@ -351,7 +350,7 @@ export class EmacsEmulator {
     }
 
     public deactivateMark(andRegion = true): void {
-        if (this.isMarkActive) {
+        if (this.isMarkActive()) {
             this._isMarkActive = false;
             if (andRegion) {
                 this.deactivateRegion();
