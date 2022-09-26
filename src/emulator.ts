@@ -102,6 +102,7 @@ export class EmacsEmulator {
             this.deactivateMark(false);
         }
         this.killYanker.onDidChangeTextDocument();
+        this.markRing.onDidChangeTextDocument(e);
     }
 
     private _hasSelectionStateChanged(): boolean {

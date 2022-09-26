@@ -1,10 +1,16 @@
 import assert from "assert";
-import { Position, Selection } from "vscode";
+import {
+    Position,
+    Range,
+    Selection,
+    TextDocumentChangeEvent,
+    TextDocumentContentChangeEvent,
+} from "vscode";
 
 export class Marker {
-    private positions: readonly Position[];
+    private readonly positions: Position[];
 
-    constructor(positions: readonly Position[]) {
+    constructor(positions: Position[]) {
         this.positions = positions;
     }
 
@@ -65,6 +71,12 @@ export class Marker {
         }
         return true;
     }
+
+    public update(change: TextDocumentContentChange): void {
+        this.positions.forEach((p, i) => {
+            this.positions[i] = updatePosition(p, change);
+        });
+    }
 }
 
 export class MarkRing {
@@ -123,4 +135,82 @@ export class MarkRing {
 
         return ret;
     }
+
+    public onDidChangeTextDocument(e: TextDocumentChangeEvent): void {
+        e.contentChanges
+            .map((event) => new TextDocumentContentChange(event))
+            .forEach((change) => {
+                this.ring.forEach((marker) => marker.update(change));
+            });
+    }
+}
+
+class TextDocumentContentChange {
+    readonly event: TextDocumentContentChangeEvent;
+
+    constructor(event: TextDocumentContentChangeEvent) {
+        this.event = event;
+    }
+
+    public get range(): Range {
+        return this.event.range;
+    }
+
+    public get text(): string {
+        return this.event.text;
+    }
+
+    public get textLines(): number {
+        if (this._textLines === undefined) {
+            const text = this.text;
+            let pos = text.indexOf("\n");
+            let count = 1;
+            while (pos >= 0) {
+                count++;
+                pos = text.indexOf("\n", pos + 1);
+            }
+            this._textLines = count;
+        }
+        return this._textLines;
+    }
+
+    public get lastTextLineLength(): number {
+        if (this._lastTextLineLength === undefined) {
+            const text = this.text;
+            const idx = text.lastIndexOf("\n");
+            this._lastTextLineLength = text.length - idx - 1;
+        }
+        return this._lastTextLineLength;
+    }
+
+    private _textLines: number | undefined = undefined;
+    private _lastTextLineLength: number | undefined = undefined;
+}
+
+function updatePosition(
+    p: Position,
+    change: TextDocumentContentChange
+): Position {
+    if (p.isBeforeOrEqual(change.range.start)) {
+        return p; // nothing to do, the edit starts after this position.
+    }
+
+    if (p.isBefore(change.range.end)) {
+        // The old position has been deleted:
+        return change.range.start;
+    }
+
+    // Otherwise, the entire edit occurred before this position, so we have to
+    // shift p by the delta of the change:
+    const origLines = change.range.end.line - change.range.start.line + 1;
+    const lineDelta = change.textLines - origLines;
+    let colDelta = 0;
+    if (change.range.end.line === p.line) {
+        colDelta = change.lastTextLineLength - change.range.end.character;
+        if (change.range.start.line === change.range.end.line) {
+            colDelta += change.range.start.character;
+        }
+    }
+
+    return p.translate(lineDelta, colDelta);
 }

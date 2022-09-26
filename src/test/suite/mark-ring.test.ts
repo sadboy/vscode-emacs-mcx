@@ -35,10 +35,10 @@ suite("MarkRing", () => {
             [new Position(6, 7)],
         ] as const;
 
-        markRing.push(new Marker(entities[0]), false);
-        markRing.push(new Marker(entities[1]), false);
-        markRing.push(new Marker(entities[2]), false);
-        markRing.push(new Marker(entities[3]), true); // Replace the top
+        markRing.push(new Marker(Array.from(entities[0])), false);
+        markRing.push(new Marker(Array.from(entities[1])), false);
+        markRing.push(new Marker(Array.from(entities[2])), false);
+        markRing.push(new Marker(Array.from(entities[3])), true); // Replace the top
 
         assert.strictEqual(markRing.getTop(), new Marker([new Position(6, 7)]));
         assert.strictEqual(markRing.pop(), new Marker([new Position(6, 7)]));
@@ -57,10 +57,10 @@ suite("MarkRing", () => {
             [new Position(4, 5)],
             [new Position(6, 7)],
         ] as const;
-        markRing.push(new Marker(entities[0]), true); // Replace the top
-        markRing.push(new Marker(entities[1]), false);
-        markRing.push(new Marker(entities[2]), false);
-        markRing.push(new Marker(entities[3]), false);
+        markRing.push(new Marker(Array.from(entities[0])), true); // Replace the top
+        markRing.push(new Marker(Array.from(entities[1])), false);
+        markRing.push(new Marker(Array.from(entities[2])), false);
+        markRing.push(new Marker(Array.from(entities[3])), false);
 
         assert.strictEqual(markRing.getTop(), new Marker([new Position(6, 7)]));
         assert.strictEqual(markRing.pop(), new Marker([new Position(6, 7)]));
