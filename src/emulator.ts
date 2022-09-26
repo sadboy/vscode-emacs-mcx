@@ -387,36 +387,41 @@ export class EmacsEmulator {
         return this.prefixArgumentHandler.getPrefixArgument();
     }
 
+    /**
+     * Maps a logical view port position to a document line number.
+     *
+     * Accounts for folded lines.
+     */
     public getWindowLine(position: WindowPosition): number | undefined {
         const firstVisibleRange = this.editor.visibleRanges[0];
         const lastVisibleRange =
             this.editor.visibleRanges[this.editor.visibleRanges.length - 1];
+        if (!firstVisibleRange || !lastVisibleRange) {
+            return undefined;
+        }
 
         switch (position) {
             case WindowPosition.Top: {
-                if (!firstVisibleRange) {
-                    return undefined;
-                }
-
                 return firstVisibleRange.start.line;
             }
             case WindowPosition.Bottom: {
-                if (!lastVisibleRange) {
-                    return undefined;
-                }
-
                 return lastVisibleRange.end.line;
             }
             case WindowPosition.Center: {
-                if (!firstVisibleRange || !lastVisibleRange) {
-                    return undefined;
-                }
-
-                return (
-                    (lastVisibleRange.end.line +
-                        firstVisibleRange.start.line) >>
-                    1
+                const totalLines = this.editor.visibleRanges.reduce(
+                    (curSum, range) =>
+                        range.end.line - range.start.line + 1 + curSum,
+                    0
                 );
+                let linesToCenter = totalLines >> 1;
+                for (const range of this.editor.visibleRanges) {
+                    const lines = range.end.line - range.start.line + 1;
+                    if (lines > linesToCenter) {
+                        return range.start.line + linesToCenter;
+                    } else {
+                        linesToCenter -= lines;
+                    }
+                }
             }
         }
     }
