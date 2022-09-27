@@ -1,58 +1,38 @@
+import { Marker } from "../mark-ring";
 import * as vscode from "vscode";
-import { TextEditor } from "vscode";
 import { EmacsCommand } from ".";
 
-function hasNonEmptySelection(textEditor: TextEditor): boolean {
-    return textEditor.selections.some((selection) => !selection.isEmpty);
+abstract class EmacsCaseCommand extends EmacsCommand {
+    abstract transformCommand: string;
+
+    public async execute(
+        textEditor: vscode.TextEditor,
+        isInMarkMode: boolean,
+        prefixArgument: number | undefined
+    ): Promise<void> {
+        const cursor = Marker.fromCursor(textEditor.selections);
+        this.emacs.deactivateMark();
+        await this.emacs.runCommand("forwardWord");
+        textEditor.selections = cursor.toAnchor(textEditor.selections);
+        await vscode.commands.executeCommand(this.transformCommand);
+        this.emacs.deactivateRegion();
+    }
 }
 
-export class TransformToUppercase extends EmacsCommand {
+export class TransformToUppercase extends EmacsCaseCommand {
     public static readonly id = "transformToUppercase";
 
-    public async execute(
-        textEditor: TextEditor,
-        isInMarkMode: boolean,
-        prefixArgument: number | undefined
-    ): Promise<void> {
-        if (!hasNonEmptySelection(textEditor)) {
-            await this.emacs.runCommand("forwardWord");
-        }
-        return vscode.commands.executeCommand<void>(
-            "editor.action.transformToUppercase"
-        );
-    }
+    transformCommand = "editor.action.transformToUppercase";
 }
 
-export class TransformToLowercase extends EmacsCommand {
+export class TransformToLowercase extends EmacsCaseCommand {
     public static readonly id = "transformToLowercase";
 
-    public async execute(
-        textEditor: TextEditor,
-        isInMarkMode: boolean,
-        prefixArgument: number | undefined
-    ): Promise<void> {
-        if (!hasNonEmptySelection(textEditor)) {
-            await this.emacs.runCommand("forwardWord");
-        }
-        return vscode.commands.executeCommand<void>(
-            "editor.action.transformToLowercase"
-        );
-    }
+    transformCommand = "editor.action.transformToLowercase";
 }
 
-export class TransformToTitlecase extends EmacsCommand {
+export class TransformToTitlecase extends EmacsCaseCommand {
     public static readonly id = "transformToTitlecase";
 
-    public async execute(
-        textEditor: TextEditor,
-        isInMarkMode: boolean,
-        prefixArgument: number | undefined
-    ): Promise<void> {
-        if (!hasNonEmptySelection(textEditor)) {
-            await this.emacs.runCommand("forwardWord");
-        }
-        return vscode.commands.executeCommand<void>(
-            "editor.action.transformToTitlecase"
-        );
-    }
+    transformCommand = "editor.action.transformToTitlecase";
 }

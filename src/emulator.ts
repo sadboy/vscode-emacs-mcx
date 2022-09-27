@@ -134,7 +134,7 @@ export class EmacsEmulator {
     ): void {
         assert(e.textEditor.document.uri.toString() === this.uri);
 
-        if (!this._isInCommand && this._hasSelectionStateChanged()) {
+        if (!this._runningCommands && this._hasSelectionStateChanged()) {
             // Editor state was modified by forces beyond our control:
             this.thisCommand = undefined;
             if (this.editor !== e.textEditor) {
@@ -269,7 +269,7 @@ export class EmacsEmulator {
             throw Error(`command ${commandName} is not found`);
         }
 
-        this._isInCommand = true;
+        this._runningCommands++;
         this._lastCommand = this.thisCommand;
         this.thisCommand = commandName;
 
@@ -278,7 +278,7 @@ export class EmacsEmulator {
         } finally {
             this.afterCommand();
             this._lastSelections = this._editor.selections;
-            this._isInCommand = false;
+            this._runningCommands--;
         }
     }
 
@@ -471,7 +471,7 @@ export class EmacsEmulator {
     private _document: TextDocument;
     private _lastSelections: readonly vscode.Selection[] = [];
     private _isMarkActive = false;
-    private _isInCommand = false;
+    private _runningCommands = 0;
     private _lastCommand: string | undefined = undefined;
     private readonly commandRegistry: EmacsCommandRegistry;
     private readonly markRing: MarkRing;
