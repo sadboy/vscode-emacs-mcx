@@ -164,8 +164,8 @@ export class EmacsEmulator {
     private _syncEditorState(): void {
         if (this.isRegionActive()) {
             const mark = Marker.fromAnchor(this.editor.selections);
-            // Replace the current mark:
-            this.markRing.push(mark, true);
+            // Set mark without pushing onto mark ring:
+            this.markRing.set(mark);
             this.activateMark(true);
         } else {
             this.deactivateMark(false);
@@ -179,7 +179,7 @@ export class EmacsEmulator {
             const mark = Marker.fromAnchor(this.editor.selections);
             this.activateMark();
             if (!this.mark || !mark.isEqual(this.mark)) {
-                this.pushMark(mark);
+                this.markRing.set(mark);
             }
         } else if (this.isMarkActive()) {
             // Mark is active but outside command deactivated region, so we reactivate:

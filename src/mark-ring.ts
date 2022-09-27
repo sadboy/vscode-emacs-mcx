@@ -83,6 +83,7 @@ export class MarkRing {
     private maxNum = 16;
     private ring: Array<Marker>;
     private pointer: number | undefined = undefined;
+    private isZeroEphemeral = false;
 
     constructor(maxNum?: number) {
         if (maxNum) {
@@ -103,6 +104,10 @@ export class MarkRing {
             if (replace) {
                 this.ring[this.pointer] = mark;
             } else {
+                if (this.isZeroEphemeral) {
+                    this.ring.shift();
+                    this.isZeroEphemeral = false;
+                }
                 this.ring.unshift(mark);
                 this.pointer = 0;
                 if (this.ring.length > this.maxNum) {
@@ -110,6 +115,11 @@ export class MarkRing {
                 }
             }
         }
+    }
+
+    public set(mark: Marker): void {
+        this.push(mark);
+        this.isZeroEphemeral = true;
     }
 
     public getTop(): Marker | undefined {
@@ -123,16 +133,18 @@ export class MarkRing {
     }
 
     public pop(): Marker | undefined {
+        if (this.isZeroEphemeral) {
+            this.ring.shift();
+            this.isZeroEphemeral = false;
+        }
         if (this.ring.length === 0) {
+            this.pointer = undefined;
             return undefined;
         }
-
         assert(typeof this.pointer === "number");
 
         const ret = this.ring[this.pointer];
-
         this.pointer = (this.pointer + 1) % this.ring.length;
-
         return ret;
     }
 

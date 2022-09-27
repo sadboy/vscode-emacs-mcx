@@ -45,15 +45,12 @@ export class PopMarkCommand extends EmacsCommand {
     ): Promise<void> {
         const controller = this.emacs;
 
-        if (isInMarkMode) {
-            controller.deactivateMark();
-        }
-
+        controller.deactivateMark();
         if (controller.mark) {
             textEditor.selections = controller.mark.toCursor();
-            revealPrimaryActive(textEditor);
         }
         controller.popMark();
+        revealPrimaryActive(textEditor);
     }
 }
 
