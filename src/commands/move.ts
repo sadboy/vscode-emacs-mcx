@@ -7,7 +7,6 @@ import {
     travelForward as travelForwardParagraph,
     travelBackward as travelBackwardParagraph,
 } from "./helpers/paragraph";
-import { revealPrimaryActive } from "./helpers/reveal";
 
 // TODO: be unnecessary
 export const moveCommandIds = [
@@ -81,7 +80,7 @@ export class ForwardChar extends EmacsCommand {
                 return new vscode.Selection(newAnchorPos, newActivePos);
             });
             textEditor.selections = newSelections;
-            revealPrimaryActive(textEditor);
+            this.emacs.revealPrimaryCursor();
         }
     }
 }
@@ -111,7 +110,7 @@ export class BackwardChar extends EmacsCommand {
                 return new vscode.Selection(newAnchorPos, newActivePos);
             });
             textEditor.selections = newSelections;
-            revealPrimaryActive(textEditor);
+            this.emacs.revealPrimaryCursor();
         }
     }
 }
@@ -293,7 +292,7 @@ export class BackToIndentation extends EmacsCommand {
             );
         });
         textEditor.selections = newSelections;
-        revealPrimaryActive(textEditor);
+        this.emacs.revealPrimaryCursor();
     }
 }
 
@@ -372,7 +371,7 @@ export class ScrollUpCommand extends EmacsCommand {
                     value: repeat,
                     select: isInMarkMode,
                 })
-                .then(() => revealPrimaryActive(textEditor));
+                .then(() => this.emacs.revealPrimaryCursor());
         }
     }
 }
@@ -418,7 +417,7 @@ export class ScrollDownCommand extends EmacsCommand {
                     value: repeat,
                     select: isInMarkMode,
                 })
-                .then(() => revealPrimaryActive(textEditor));
+                .then(() => this.emacs.revealPrimaryCursor());
         }
     }
 }
@@ -451,7 +450,7 @@ export class ForwardParagraph extends EmacsCommand {
             );
         });
         textEditor.selections = newSelections;
-        revealPrimaryActive(textEditor);
+        this.emacs.revealPrimaryCursor();
     }
 }
 
@@ -483,7 +482,7 @@ export class BackwardParagraph extends EmacsCommand {
             );
         });
         textEditor.selections = newSelections;
-        revealPrimaryActive(textEditor);
+        this.emacs.revealPrimaryCursor();
     }
 }
 

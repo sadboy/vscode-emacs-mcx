@@ -2,7 +2,6 @@ import { EmacsEmulator } from "src/emulator";
 import { Marker } from "../mark-ring";
 import * as vscode from "vscode";
 import { EmacsCommand } from ".";
-import { revealPrimaryActive } from "./helpers/reveal";
 
 export class SetMarkCommand extends EmacsCommand {
     public static readonly id = "setMarkCommand";
@@ -50,7 +49,7 @@ export class PopMarkCommand extends EmacsCommand {
             textEditor.selections = controller.mark.toCursor();
         }
         controller.popMark();
-        revealPrimaryActive(textEditor);
+        this.emacs.revealPrimaryCursor();
     }
 }
 

@@ -2,7 +2,6 @@ import * as paredit from "paredit.js";
 import { TextDocument, Selection, Range, TextEditor, Position } from "vscode";
 import { EmacsCommand } from ".";
 import { KillYankCommand } from "./kill";
-import { revealPrimaryActive } from "./helpers/reveal";
 import { EmacsEmulator } from "../emulator";
 import assert from "assert";
 import { AppendDirection } from "../kill-yank/kill-ring";
@@ -68,7 +67,7 @@ abstract class PareditNavigatorCommand extends EmacsCommand {
 
         textEditor.selections = newSelections;
 
-        revealPrimaryActive(textEditor);
+        this.emacs.revealPrimaryCursor();
     }
 }
 
@@ -127,7 +126,7 @@ export class MarkSexp extends EmacsCommand {
         });
 
         textEditor.selections = controller.mark.toAnchor(newCursor);
-        revealPrimaryActive(textEditor);
+        this.emacs.revealPrimaryCursor();
     }
 }
 
@@ -157,7 +156,7 @@ export class KillSexp extends KillYankCommand {
 
         await this.killYanker.kill(killRanges);
 
-        revealPrimaryActive(textEditor);
+        this.emacs.revealPrimaryCursor();
     }
 }
 
@@ -187,6 +186,6 @@ export class BackwardKillSexp extends KillYankCommand {
 
         await this.killYanker.kill(killRanges, AppendDirection.Backward);
 
-        revealPrimaryActive(textEditor);
+        this.emacs.revealPrimaryCursor();
     }
 }

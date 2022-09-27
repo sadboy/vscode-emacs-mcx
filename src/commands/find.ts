@@ -3,7 +3,6 @@ import { TextEditor } from "vscode";
 import { EmacsCommand } from ".";
 import { EmacsEmulator, SearchState } from "../emulator";
 import { MessageManager } from "../message";
-import { revealPrimaryActive } from "./helpers/reveal";
 import { WorkspaceConfigCache } from "../workspace-configuration";
 import { Marker } from "../mark-ring";
 
@@ -184,7 +183,7 @@ export class IsearchAbort extends IsearchCommand {
             textEditor.selections = this.searchState.startSelections;
         }
         MessageManager.showMessage("Quit");
-        revealPrimaryActive(textEditor);
+        this.emacs.revealPrimaryCursor();
         return vscode.commands.executeCommand("closeFindWidget");
     }
 }

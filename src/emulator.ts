@@ -9,7 +9,6 @@ import { PrefixArgumentHandler } from "./prefix-argument";
 import { Configuration } from "./configuration/configuration";
 import { Marker, MarkRing } from "./mark-ring";
 import { InputBoxMinibuffer, Minibuffer } from "./minibuffer";
-import { revealPrimaryActive } from "./commands/helpers/reveal";
 import assert from "assert";
 
 export interface SearchState {
@@ -350,7 +349,9 @@ export class EmacsEmulator {
             }
             this._editor.selections = newSelections;
             this.markRing.push(cursor, true);
-            return revealPrimaryActive(this._editor);
+            return this.revealPrimaryCursor(
+                vscode.TextEditorRevealType.InCenterIfOutsideViewport
+            );
         } else {
             MessageManager.showMessage("No mark set in this buffer");
         }
@@ -435,6 +436,14 @@ export class EmacsEmulator {
             }
             this.editor.selections = newSelections;
         }
+    }
+
+    public revealPrimaryCursor(revealType?: vscode.TextEditorRevealType): void {
+        const cursor = this.editor.selection.active;
+        return this.editor.revealRange(
+            new vscode.Range(cursor, cursor),
+            revealType
+        );
     }
 
     public activateRegion(): void {

@@ -12,7 +12,6 @@ import {
     findNextWordEnd,
     findPreviousWordStart,
 } from "./helpers/wordOperations";
-import { revealPrimaryActive } from "./helpers/reveal";
 import { MessageManager } from "../message";
 import { AppendDirection } from "../kill-yank/kill-ring";
 
@@ -86,7 +85,7 @@ export class KillWord extends KillYankCommand {
                     maybeRange != null
             );
         await this.killYanker.kill(killRanges);
-        revealPrimaryActive(textEditor);
+        this.emacs.revealPrimaryCursor();
     }
 }
 
@@ -137,7 +136,7 @@ export class BackwardKillWord extends KillYankCommand {
                     maybeRange != null
             );
         await this.killYanker.kill(killRanges, AppendDirection.Backward);
-        revealPrimaryActive(textEditor);
+        this.emacs.revealPrimaryCursor();
     }
 }
 
@@ -178,7 +177,7 @@ export class KillLine extends KillYankCommand {
         });
         this.emacs.deactivateMark();
         await this.killYanker.kill(ranges);
-        return revealPrimaryActive(textEditor);
+        return this.emacs.revealPrimaryCursor();
     }
 }
 
@@ -200,7 +199,7 @@ export class KillWholeLine extends KillYankCommand {
         );
         this.emacs.deactivateMark();
         await this.killYanker.kill(ranges);
-        return revealPrimaryActive(textEditor);
+        return this.emacs.revealPrimaryCursor();
     }
 }
 
@@ -219,7 +218,7 @@ export class KillRegion extends KillYankCommand {
         await this.killYanker.kill(ranges);
         this.emacs.deactivateMark();
         this.killYanker.cancelKillAppend();
-        revealPrimaryActive(textEditor);
+        this.emacs.revealPrimaryCursor();
     }
 }
 
@@ -238,7 +237,7 @@ export class CopyRegion extends KillYankCommand {
         await this.killYanker.copy(ranges);
         this.emacs.deactivateMark();
         this.killYanker.cancelKillAppend();
-        revealPrimaryActive(textEditor);
+        this.emacs.revealPrimaryCursor();
     }
 }
 
@@ -252,7 +251,7 @@ export class Yank extends KillYankCommand {
     ): Promise<void> {
         await this.killYanker.yank();
         this.emacs.deactivateMark();
-        revealPrimaryActive(textEditor);
+        this.emacs.revealPrimaryCursor();
     }
 }
 
@@ -271,7 +270,7 @@ export class YankPop extends KillYankCommand {
             this.emacs.thisCommand = Yank.id;
             await this.killYanker.yankPop();
             this.emacs.deactivateMark();
-            revealPrimaryActive(textEditor);
+            this.emacs.revealPrimaryCursor();
         } else if (this.emacs.killRing) {
             const selected = await vscode.window.showQuickPick(
                 this.emacs.killRing.getRingAsQuickPickItems(),
