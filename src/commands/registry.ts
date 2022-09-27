@@ -1,6 +1,7 @@
 import { EmacsCommand } from ".";
 import * as CaseCommands from "./case";
 import { DeleteBlankLines } from "./delete-blank-lines";
+import * as CursorCommands from "./cursor";
 import * as EditCommands from "./edit";
 import * as FindCommands from "./find";
 import * as KillCommands from "./kill";
@@ -45,6 +46,9 @@ const _CommandRegister = new Map(
         EditCommands.NewLine,
         DeleteBlankLines,
         RecenterTopBottom,
+        CursorCommands.RotatePrimaryCursorNext,
+        CursorCommands.RotatePrimaryCursorPrev,
+        CursorCommands.DeletePrimaryCursor,
 
         FindCommands.IsearchForward,
         FindCommands.IsearchBackward,
