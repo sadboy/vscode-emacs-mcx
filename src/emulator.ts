@@ -81,9 +81,7 @@ export class EmacsEmulator {
 
         this.uri = this._document.uri.toString();
         this.markRing = new MarkRing(Configuration.instance.markRingMax);
-
         this.commandRegistry = new EmacsCommandRegistry(this);
-        this.afterCommand = this.afterCommand.bind(this);
 
         this.searchState = { startSelections: undefined };
         this.killYanker = new KillYanker(this);
@@ -166,7 +164,7 @@ export class EmacsEmulator {
             const mark = Marker.fromAnchor(this.editor.selections);
             // Set mark without pushing onto mark ring:
             this.markRing.set(mark);
-            this.activateMark(true);
+            this.activateMark();
         } else {
             this.deactivateMark(false);
         }
@@ -264,11 +262,11 @@ export class EmacsEmulator {
         ...args: unknown[]
     ): Promise<void> {
         const command = this.commandRegistry.get(commandName);
-
         if (command === undefined) {
             throw Error(`command ${commandName} is not found`);
         }
 
+        const markState = this._isMarkActive;
         this._runningCommands++;
         this._lastCommand = this.thisCommand;
         this.thisCommand = commandName;
@@ -276,8 +274,28 @@ export class EmacsEmulator {
         try {
             await command.run(...args);
         } finally {
-            this.afterCommand();
+            this.prefixArgumentHandler.cancel();
+
             this._lastSelections = this._editor.selections;
+            if (
+                // We must decrement _runningCommands only at the very end,
+                // because the async `executeCommand` may trigger the
+                // onDidChangeTextEditorSelection handler to run:
+                this._runningCommands === 1 &&
+                this._isMarkActive !== markState
+            ) {
+                await vscode.commands.executeCommand(
+                    "setContext",
+                    "emacs-mcx.inMarkMode",
+                    this._isMarkActive
+                );
+
+                if (this._isMarkActive) {
+                    MessageManager.showMessage("Mark activated");
+                } else {
+                    MessageManager.showMessage("Mark deactivated");
+                }
+            }
             this._runningCommands--;
         }
     }
@@ -302,24 +320,6 @@ export class EmacsEmulator {
         MessageManager.showMessage("Quit");
     }
 
-    public activateMark(nomsg = false): void {
-        if (!this.isMarkActive()) {
-            this._isMarkActive = true;
-
-            // At this moment, the only way to set the context for `when` conditions is `setContext` command.
-            // The discussion is ongoing in https://github.com/Microsoft/vscode/issues/10471
-            // TODO: How to write unittest for `setContext`?
-            vscode.commands.executeCommand(
-                "setContext",
-                "emacs-mcx.inMarkMode",
-                true
-            );
-            if (!nomsg) {
-                MessageManager.showMessage("Mark activated");
-            }
-        }
-    }
-
     public pushMark(
         newMark: Marker | undefined = undefined,
         nomsg = false,
@@ -333,7 +333,7 @@ export class EmacsEmulator {
             MessageManager.showMessage("Mark set");
         }
         if (activate) {
-            this.activateMark(nomsg);
+            this.activateMark();
         }
     }
 
@@ -356,18 +356,15 @@ export class EmacsEmulator {
         }
     }
 
+    public activateMark(): void {
+        this._isMarkActive = true;
+    }
+
     public deactivateMark(andRegion = true): void {
         if (andRegion) {
             this.deactivateRegion();
         }
-        if (this.isMarkActive()) {
-            this._isMarkActive = false;
-            vscode.commands.executeCommand(
-                "setContext",
-                "emacs-mcx.inMarkMode",
-                false
-            );
-        }
+        this._isMarkActive = false;
     }
 
     public executeCommandWithPrefixArgument<T>(
@@ -461,10 +458,6 @@ export class EmacsEmulator {
 
     private cancelMultiCursor() {
         this._editor.selections = [this._editor.selection];
-    }
-
-    private afterCommand() {
-        return this.prefixArgumentHandler.cancel();
     }
 
     private _editor: TextEditor;
