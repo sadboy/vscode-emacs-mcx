@@ -32,8 +32,6 @@ export class Configuration implements IConfiguration, vscode.Disposable {
 
     public markRingMax = 16;
 
-    public strictEmacsMove = false;
-
     public killWholeLine = false;
 
     public enableOverridingTypeCommand = false;

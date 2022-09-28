@@ -9,7 +9,6 @@ import {
     setupWorkspace,
     cleanUpWorkspace,
 } from "../utils";
-import { Configuration } from "../../../configuration/configuration";
 
 suite("moveBeginning/EndOfLine", () => {
     let activeTextEditor: TextEditor;
@@ -31,10 +30,6 @@ suite("moveBeginning/EndOfLine", () => {
     teardown(cleanUpWorkspace);
 
     suite("strictEmacsMove=true", () => {
-        setup(() => {
-            Configuration.instance.strictEmacsMove = true;
-        });
-
         suite("moveBeginningOfLine", () => {
             test("normal", async () => {
                 setEmptyCursors(activeTextEditor, [1, 1000]);
@@ -67,63 +62,6 @@ suite("moveBeginning/EndOfLine", () => {
                 assertSelectionsEqual(
                     activeTextEditor,
                     new vscode.Selection(1, 0, 1, 1000)
-                );
-            });
-        });
-    });
-
-    suite("strictEmacsMove=false", () => {
-        let wrappedLineWidth: number;
-
-        setup(async () => {
-            Configuration.instance.strictEmacsMove = false;
-
-            // Get wrapped line width
-            setEmptyCursors(activeTextEditor, [1, 0]);
-            await vscode.commands.executeCommand<void>("cursorMove", {
-                to: "wrappedLineEnd",
-                value: 1,
-            });
-            wrappedLineWidth = activeTextEditor.selection.active.character;
-        });
-
-        suite("moveBeginningOfLine", () => {
-            let lastWrappedLineStart: number;
-            setup(() => {
-                lastWrappedLineStart = 1000 - (1000 % wrappedLineWidth);
-            });
-
-            test("normal", async () => {
-                setEmptyCursors(activeTextEditor, [1, 1000]);
-                await emulator.runCommand("moveBeginningOfLine");
-                assertCursorsEqual(activeTextEditor, [1, lastWrappedLineStart]);
-            });
-
-            test("with mark", async () => {
-                setEmptyCursors(activeTextEditor, [1, 1000]);
-                await emulator.runCommand("setMarkCommand");
-                await emulator.runCommand("moveBeginningOfLine");
-                assertSelectionsEqual(
-                    activeTextEditor,
-                    new vscode.Selection(1, 1000, 1, lastWrappedLineStart)
-                );
-            });
-        });
-
-        suite("moveEndOfLine", () => {
-            test("normal", async () => {
-                setEmptyCursors(activeTextEditor, [1, 0]);
-                await emulator.runCommand("moveEndOfLine");
-                assertCursorsEqual(activeTextEditor, [1, wrappedLineWidth]);
-            });
-
-            test("with mark", async () => {
-                setEmptyCursors(activeTextEditor, [1, 0]);
-                await emulator.runCommand("setMarkCommand");
-                await emulator.runCommand("moveEndOfLine");
-                assertSelectionsEqual(
-                    activeTextEditor,
-                    new vscode.Selection(1, 0, 1, wrappedLineWidth)
                 );
             });
         });
