@@ -41,7 +41,7 @@ export function replaceMetaWithEscape(keycombo: string): string {
     return (metaIncluded ? "escape " : "") + strokesWithoutMeta.join("+");
 }
 
-function addWhenCond(base: string | undefined, additional: string): string {
+/* function addWhenCond(base: string | undefined, additional: string): string {
     if (!base || base.trim() === "") {
         return additional;
     }
@@ -51,7 +51,7 @@ function addWhenCond(base: string | undefined, additional: string): string {
     }
     return `${base} && ${additional}`;
 }
-
+ */
 function replaceAll(src: string, search: string, replacement: string) {
     return src.split(search).join(replacement); // split + join = replaceAll
 }
@@ -101,15 +101,16 @@ export function generateKeybindings(src: KeyBindingSource): KeyBinding[] {
                 keybindings.push({
                     key: replaceAll(key, "meta", "alt"),
                     command: src.command,
-                    when: addWhenCond(
+                    /*                     when: addWhenCond(
                         when,
                         "!config.emacs-mcx.useMetaPrefixMacCmd"
-                    ),
+                    ), */
+                    when: when,
                     ...(src.args ? { args: src.args } : {}),
                 });
 
                 // Generate a keybinding using CMD as meta for macOS.
-                keybindings.push({
+                /*                 keybindings.push({
                     key: replaceAll(key, "meta", "alt"),
                     mac: replaceAll(key, "meta", "cmd"),
                     command: src.command,
@@ -119,9 +120,9 @@ export function generateKeybindings(src: KeyBindingSource): KeyBinding[] {
                     ),
                     ...(src.args ? { args: src.args } : {}),
                 });
-
+ */
                 // Generate keybindings using ESC and Ctrl+[ as meta.
-                const keystrokes = key.split(" ").filter((k) => k);
+                /*                 const keystrokes = key.split(" ").filter((k) => k);
                 if (keystrokes.length === 1) {
                     const keyWithEscapeMeta = replaceMetaWithEscape(key);
                     keybindings.push({
@@ -146,7 +147,7 @@ export function generateKeybindings(src: KeyBindingSource): KeyBinding[] {
                     console.warn(
                         `"${key}" includes more than one key strokes then it's meta key specification cannot be converted to "ESC" and "ctrl+[".`
                     );
-                }
+                } */
             } else {
                 keybindings.push({
                     key,
@@ -162,9 +163,13 @@ export function generateKeybindings(src: KeyBindingSource): KeyBinding[] {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function isKeyBindingSource(maybeSrc: {
-    [key: string]: any;
-}): maybeSrc is KeyBindingSource {
+export function isKeyBindingSource(
+    maybeSrc:
+        | {
+              [key: string]: unknown;
+          }
+        | KeyBindingSource
+): maybeSrc is KeyBindingSource {
     // Check for .key
     if (
         typeof maybeSrc.key !== "undefined" &&
@@ -229,7 +234,7 @@ export function generateKeybindingsForPrefixArgument(): KeyBinding[] {
             ...generateKeybindings({
                 key: `meta+${num.toString()}`,
                 command: "emacs-mcx.subsequentArgumentDigit",
-                when: "emacs-mcx.acceptingArgument && editorTextFocus && config.emacs-mcx.enableDigitArgument",
+                when: "emacs-mcx.acceptingArgument && editorTextFocus",
                 args: [num],
             })
         );
@@ -237,7 +242,7 @@ export function generateKeybindingsForPrefixArgument(): KeyBinding[] {
             ...generateKeybindings({
                 key: `meta+${num.toString()}`,
                 command: "emacs-mcx.digitArgument",
-                when: "!emacs-mcx.acceptingArgument && editorTextFocus && config.emacs-mcx.enableDigitArgument",
+                when: "!emacs-mcx.acceptingArgument && editorTextFocus",
                 args: [num],
             })
         );

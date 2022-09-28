@@ -248,11 +248,6 @@
         "then": "workbench.action.gotoLine"
       }
     },
-    {
-      "key": "escape g",
-      "command": "workbench.action.gotoLine",
-      "when": "config.emacs-mcx.useMetaPrefixEscape"
-    },
     // marker next
     {
       "keys": ["meta+g n", "meta+g meta+n"],
@@ -272,6 +267,11 @@
     {
       "key": "ctrl+l",
       "command": "emacs-mcx.recenterTopBottom",
+      "when": "editorTextFocus"
+    },
+    {
+      "key": "meta+r",
+      "command": "emacs-mcx.moveToWindowLineTopBottom",
       "when": "editorTextFocus"
     },
     // i-search forward
@@ -361,17 +361,6 @@
         "isWindows && replaceInputFocussed && !isComposing"
       ],
       "command": ""
-    },
-    // addSelectionToNext/PreviousFindMatch
-    {
-      "key": "ctrl+meta+n",
-      "command": "emacs-mcx.addSelectionToNextFindMatch",
-      "when": "editorFocus"
-    },
-    {
-      "key": "ctrl+meta+p",
-      "command": "emacs-mcx.addSelectionToPreviousFindMatch",
-      "when": "editorFocus"
     },
     ////////
     // Edit commands
@@ -582,12 +571,12 @@
     {
       "key": "escape",
       "command": "emacs-mcx.cancel",
-      "when": "editorTextFocus && editorHasSelection && !config.emacs-mcx.useMetaPrefixEscape"
+      "when": "editorTextFocus && editorHasSelection"
     },
     {
       "key": "escape",
       "command": "emacs-mcx.cancel",
-      "when": "editorTextFocus && editorHasMultipleSelections && !config.emacs-mcx.useMetaPrefixEscape"
+      "when": "editorTextFocus && editorHasMultipleSelections"
     },
     {
       "key": "ctrl+g",
@@ -831,11 +820,6 @@
       "keys": ["ctrl+space", "ctrl+shift+2"],
       "command": "emacs-mcx.setMarkCommand",
       "when": "editorTextFocus"
-    },
-    {
-      "key": "escape space",
-      "command": "emacs-mcx.setMarkCommand",
-      "when": "editorTextFocus && config.emacs-mcx.useMetaPrefixEscape"
     },
     {
       "key": "ctrl+x ctrl+x",

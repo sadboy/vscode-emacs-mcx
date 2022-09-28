@@ -274,7 +274,7 @@ export function activate(context: vscode.ExtensionContext): void {
         }
     );
 
-    // Register all commands from the command register:
+    // Register all buffer-level commands:
     CommandRegister.forEach((command, name) => {
         registerEmulatorCommand(
             `${COMMAND_NAME_PREFIX}.${name}`,
