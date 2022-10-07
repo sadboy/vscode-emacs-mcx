@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { Position, Selection, TextDocument, TextEditor } from "vscode";
+import { Position, Range, Selection, TextDocument, TextEditor } from "vscode";
 import { EmacsCommandRegistry } from "./commands/registry";
 import { KillYanker } from "./kill-yank";
 import { KillRing } from "./kill-yank/kill-ring";
@@ -12,7 +12,7 @@ import { InputBoxMinibuffer, Minibuffer } from "./minibuffer";
 import assert from "assert";
 
 export interface SearchState {
-    startSelections: readonly vscode.Selection[] | undefined;
+    startPosition: Marker | undefined;
 }
 
 export enum WindowPosition {
@@ -62,6 +62,10 @@ export class EmacsEmulator {
         }
     }
 
+    public bufferSubstring(range: Range): string {
+        return this.document.getText(range);
+    }
+
     public get numCursors(): number {
         return this._editor.selections.length;
     }
@@ -82,7 +86,7 @@ export class EmacsEmulator {
         this.markRing = new MarkRing(Configuration.instance.markRingMax);
         this.commandRegistry = new EmacsCommandRegistry(this);
 
-        this.searchState = { startSelections: undefined };
+        this.searchState = { startPosition: undefined };
         this.killYanker = new KillYanker(this);
     }
 

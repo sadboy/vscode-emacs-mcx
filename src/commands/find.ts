@@ -1,22 +1,21 @@
 import * as vscode from "vscode";
-import { TextEditor } from "vscode";
+import { Range, TextEditor } from "vscode";
 import { EmacsCommand } from ".";
 import { EmacsEmulator, SearchState } from "../emulator";
 import { MessageManager } from "../message";
-import { WorkspaceConfigCache } from "../workspace-configuration";
 import { Marker } from "../mark-ring";
 
 interface FindArgs {
     // See https://github.com/microsoft/vscode/blob/1.64.0/src/vs/editor/contrib/find/browser/findController.ts#L588-L599
     searchString?: string;
     replaceString?: string;
-    isRegex: boolean;
-    matchWholeWord: boolean;
-    isCaseSensitive: boolean;
-    preserveCase: boolean;
+    isRegex?: boolean;
+    matchWholeWord?: boolean;
+    isCaseSensitive?: boolean;
+    preserveCase?: boolean;
 }
 
-abstract class IsearchCommand extends EmacsCommand {
+abstract class ISearchCommand extends EmacsCommand {
     protected searchState: SearchState;
 
     public constructor(emacsController: EmacsEmulator) {
@@ -25,50 +24,50 @@ abstract class IsearchCommand extends EmacsCommand {
         this.searchState = emacsController.searchState;
     }
 
-    protected openFindWidget(opts: {
-        isRegex: boolean;
+    protected async openFindWidget({
+        isRegex,
+        searchString,
+        replaceString,
+    }: {
+        isRegex?: boolean;
+        searchString?: string;
         replaceString?: string;
-    }): Thenable<void> {
-        const { isRegex, replaceString } = opts;
-
+    }): Promise<void> {
         const findArgs: FindArgs = {
-            searchString: undefined,
+            searchString,
             replaceString,
             isRegex,
-            matchWholeWord: false,
-            isCaseSensitive: false,
-            preserveCase: false,
         };
 
-        const { seedSearchStringFromSelection } =
-            WorkspaceConfigCache.get("editor.find");
-
-        if (seedSearchStringFromSelection === "never") {
-            return vscode.commands.executeCommand(
-                "editor.actions.findWithArgs",
-                findArgs
-            );
-        }
-
-        // `editor.actions.findWithArgs` respects the `editor.find.seedSearchStringFromSelection` config
-        // when the previous search string is empty; https://github.com/microsoft/vscode/blob/5554b12acf27056905806867f251c859323ff7e9/src/vs/editor/contrib/find/browser/findController.ts#L604
-        // Then we set an empty string once and call the command again
-        // so that the config is effective when it is necessary e.g. not set as "never".
-        return vscode.commands
-            .executeCommand("editor.actions.findWithArgs", {
-                ...findArgs,
-                searchString: "",
-            })
-            .then(() =>
-                vscode.commands.executeCommand(
-                    "editor.actions.findWithArgs",
-                    findArgs
-                )
-            );
+        return vscode.commands.executeCommand(
+            "editor.actions.findWithArgs",
+            findArgs
+        );
     }
 }
 
-export class IsearchForward extends IsearchCommand {
+export class ISearchBegin extends ISearchCommand {
+    public static readonly id = "isearchBegin";
+
+    public async execute(
+        textEditor: vscode.TextEditor,
+        isInMarkMode: boolean,
+        prefixArgument: number | undefined,
+        ...args: unknown[]
+    ): Promise<unknown> {
+        this.searchState.startPosition = Marker.fromCursor(
+            textEditor.selections
+        );
+        let findArgs: FindArgs = { isRegex: false };
+        if (args.length > 0) {
+            // Just let it error at runtime if keybindings.json is bad:
+            [findArgs] = args as [FindArgs];
+        }
+        return this.openFindWidget(findArgs);
+    }
+}
+
+export class ISearchForward extends ISearchCommand {
     public static readonly id = "isearchForward";
 
     public async execute(
@@ -76,17 +75,14 @@ export class IsearchForward extends IsearchCommand {
         isInMarkMode: boolean,
         prefixArgument: number | undefined
     ): Promise<void> {
-        this.searchState.startSelections = textEditor.selections;
-
-        return this.openFindWidget({ isRegex: false }).then(() =>
-            vscode.commands.executeCommand<void>(
-                "editor.action.nextMatchFindAction"
-            )
+        await this.openFindWidget({ isRegex: false });
+        return vscode.commands.executeCommand(
+            "editor.action.nextMatchFindAction"
         );
     }
 }
 
-export class IsearchBackward extends IsearchCommand {
+export class ISearchBackward extends ISearchCommand {
     public static readonly id = "isearchBackward";
 
     public async execute(
@@ -94,16 +90,14 @@ export class IsearchBackward extends IsearchCommand {
         isInMarkMode: boolean,
         prefixArgument: number | undefined
     ): Promise<void> {
-        this.searchState.startSelections = textEditor.selections;
-        return this.openFindWidget({ isRegex: false }).then(() =>
-            vscode.commands.executeCommand<void>(
-                "editor.action.previousMatchFindAction"
-            )
+        await this.openFindWidget({ isRegex: false });
+        return vscode.commands.executeCommand(
+            "editor.action.previousMatchFindAction"
         );
     }
 }
 
-export class IsearchForwardRegexp extends IsearchCommand {
+export class ISearchForwardRegexp extends ISearchCommand {
     public static readonly id = "isearchForwardRegexp";
 
     public async execute(
@@ -111,15 +105,14 @@ export class IsearchForwardRegexp extends IsearchCommand {
         isInMarkMode: boolean,
         prefixArgument: number | undefined
     ): Promise<void> {
-        this.searchState.startSelections = textEditor.selections;
         await this.openFindWidget({ isRegex: true });
-        return vscode.commands.executeCommand<void>(
+        return vscode.commands.executeCommand(
             "editor.action.nextMatchFindAction"
         );
     }
 }
 
-export class IsearchBackwardRegexp extends IsearchCommand {
+export class ISearchBackwardRegexp extends ISearchCommand {
     public static readonly id = "isearchBackwardRegexp";
 
     public async execute(
@@ -127,15 +120,31 @@ export class IsearchBackwardRegexp extends IsearchCommand {
         isInMarkMode: boolean,
         prefixArgument: number | undefined
     ): Promise<void> {
-        this.searchState.startSelections = textEditor.selections;
         await this.openFindWidget({ isRegex: true });
-        return vscode.commands.executeCommand<void>(
+        return vscode.commands.executeCommand(
             "editor.action.previousMatchFindAction"
         );
     }
 }
 
-export class QueryReplace extends IsearchCommand {
+export class ISearchYankWordOrChar extends ISearchCommand {
+    public static readonly id = "isearchYankWordOrChar";
+
+    public async execute(
+        textEditor: vscode.TextEditor,
+        isInMarkMode: boolean,
+        prefixArgument: number | undefined
+    ): Promise<unknown> {
+        const anchor = textEditor.selection.anchor;
+        await this.emacs.runCommand("forwardWord");
+        const searchString = this.emacs.bufferSubstring(
+            new Range(anchor, textEditor.selection.active)
+        );
+        return this.openFindWidget({ searchString: searchString });
+    }
+}
+
+export class QueryReplace extends ISearchCommand {
     public static readonly id = "queryReplace";
 
     public async execute(
@@ -143,7 +152,6 @@ export class QueryReplace extends IsearchCommand {
         isInMarkMode: boolean,
         prefixArgument: number | undefined
     ): Promise<void> {
-        this.searchState.startSelections = textEditor.selections;
         // I could not find a way to open the find widget with `editor.actions.findWithArgs`
         // revealing the replace input and restoring the both query and replace strings.
         // So `editor.action.startFindReplaceAction` is used here.
@@ -153,7 +161,7 @@ export class QueryReplace extends IsearchCommand {
     }
 }
 
-export class QueryReplaceRegexp extends IsearchCommand {
+export class QueryReplaceRegexp extends ISearchCommand {
     public static readonly id = "queryReplaceRegexp";
 
     public async execute(
@@ -161,17 +169,19 @@ export class QueryReplaceRegexp extends IsearchCommand {
         isInMarkMode: boolean,
         prefixArgument: number | undefined
     ): Promise<void> {
-        this.searchState.startSelections = textEditor.selections;
         // Like `queryReplace` command, I could not find a way to open the find widget with the desired state.
         // In this command, setting `isRegex` is the priority and I gave up restoring the replace string by setting ´replaceString=undefined`.
-        return this.openFindWidget({ isRegex: true, replaceString: "" });
+        return this.openFindWidget({
+            isRegex: true,
+            replaceString: "",
+        });
     }
 }
 
 /**
  * C-g
  */
-export class IsearchAbort extends IsearchCommand {
+export class ISearchAbort extends ISearchCommand {
     public static readonly id = "isearchAbort";
 
     public async execute(
@@ -179,10 +189,11 @@ export class IsearchAbort extends IsearchCommand {
         isInMarkMode: boolean,
         prefixArgument: number | undefined
     ): Promise<void> {
-        if (this.searchState.startSelections) {
-            textEditor.selections = this.searchState.startSelections;
+        if (this.searchState.startPosition) {
+            textEditor.selections = this.searchState.startPosition.toCursor();
         }
         MessageManager.showMessage("Quit");
+        this.emacs.deactivateMark();
         this.emacs.revealPrimaryCursor();
         return vscode.commands.executeCommand("closeFindWidget");
     }
@@ -191,7 +202,7 @@ export class IsearchAbort extends IsearchCommand {
 /**
  * Enter, etc
  */
-export class IsearchExit extends IsearchCommand {
+export class ISearchExit extends ISearchCommand {
     public static readonly id = "isearchExit";
 
     public async execute(
@@ -200,25 +211,39 @@ export class IsearchExit extends IsearchCommand {
         prefixArgument: number | undefined,
         ...args: unknown[]
     ): Promise<void> {
-        if (this.searchState.startSelections) {
-            this.emacs.pushMark(
-                Marker.fromAnchor(this.searchState.startSelections),
-                true
-            );
+        this.emacs.deactivateMark();
+        if (this.searchState.startPosition) {
+            this.emacs.pushMark(this.searchState.startPosition, true);
             MessageManager.showMessage("Mark saved where search started");
         }
-        this.emacs.deactivateMark();
 
         if (args.length > 0) {
             await vscode.commands.executeCommand("closeFindWidget");
-            const arg = args[0];
-            if (typeof arg === "object" && arg !== null && "then" in arg) {
-                await vscode.commands.executeCommand(
-                    (arg as { then: string }).then
-                );
-            }
+
+            const [{ then }] = args as [{ then: string }];
+            return vscode.commands.executeCommand(then);
         } else {
             return vscode.commands.executeCommand("closeFindWidget");
         }
+    }
+}
+
+export class ISearchAccept extends ISearchCommand {
+    public static readonly id = "isearchAccept";
+
+    public async execute(
+        textEditor: TextEditor,
+        isInMarkMode: boolean,
+        prefixArgument: number | undefined
+    ): Promise<void> {
+        this.emacs.deactivateMark();
+        if (this.searchState.startPosition) {
+            this.emacs.pushMark(this.searchState.startPosition, true);
+            MessageManager.showMessage("Mark saved where search started");
+        }
+
+        return vscode.commands.executeCommand(
+            "workbench.action.focusActiveEditorGroup"
+        );
     }
 }

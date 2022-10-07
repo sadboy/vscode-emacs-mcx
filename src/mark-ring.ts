@@ -22,6 +22,10 @@ export class Marker {
         return new Marker(selections.map((selection) => selection.active));
     }
 
+    public get primary(): Position | undefined {
+        return this.positions[0];
+    }
+
     public toCursor(
         selections: readonly Selection[] | undefined = undefined
     ): Selection[] {
