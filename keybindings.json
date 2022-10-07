@@ -28,9 +28,9 @@
       "whens": ["editorTextFocus", "terminalFocus"] // TODO: `!suggestWidgetVisible` should be added like up/down?
     },
     {
-      "keys": ["right", "ctrl+f"],
+      "keys": ["ctrl+f"],
       "command": "emacs-mcx.isearchExit",
-      "when": "!config.emacs-mcx.cursorMoveOnFindWidget && editorFocus && findWidgetVisible && !replaceInputFocussed && !isComposing",
+      "when": "editorFocus && findInputFocussed && !replaceInputFocussed && !isComposing",
       "args": {
         "then": "emacs-mcx.forwardChar"
       }
@@ -42,9 +42,9 @@
       "whens": ["editorTextFocus", "terminalFocus"]
     },
     {
-      "keys": ["left", "ctrl+b"],
+      "keys": ["ctrl+b"],
       "command": "emacs-mcx.isearchExit",
-      "when": "!config.emacs-mcx.cursorMoveOnFindWidget && editorFocus && findWidgetVisible && !replaceInputFocussed && !isComposing",
+      "when": "editorFocus && findInputFocussed && !replaceInputFocussed && !isComposing",
       "args": {
         "then": "emacs-mcx.backwardChar"
       }
@@ -66,9 +66,9 @@
       "when": "parameterHintsMultipleSignatures && parameterHintsVisible && textInputFocus"
     },
     {
-      "keys": ["up", "ctrl+p"],
+      "keys": ["ctrl+p"],
       "command": "emacs-mcx.isearchExit",
-      "when": "!config.emacs-mcx.cursorMoveOnFindWidget && editorFocus && findWidgetVisible && !replaceInputFocussed && !isComposing",
+      "when": "editorFocus && findInputFocussed && !replaceInputFocussed && !isComposing",
       "args": {
         "then": "emacs-mcx.previousLine"
       }
@@ -90,9 +90,9 @@
       "when": "parameterHintsMultipleSignatures && parameterHintsVisible && textInputFocus"
     },
     {
-      "keys": ["down", "ctrl+n"],
+      "keys": ["ctrl+n"],
       "command": "emacs-mcx.isearchExit",
-      "when": "!config.emacs-mcx.cursorMoveOnFindWidget && editorFocus && findWidgetVisible && !replaceInputFocussed && !isComposing",
+      "when": "editorFocus && findInputFocussed && !replaceInputFocussed && !isComposing",
       "args": {
         "then": "emacs-mcx.nextLine"
       }
@@ -104,9 +104,9 @@
       "whens": ["editorTextFocus", "terminalFocus"]
     },
     {
-      "keys": ["home", "ctrl+a"],
+      "keys": ["ctrl+a"],
       "command": "emacs-mcx.isearchExit",
-      "when": "!config.emacs-mcx.cursorMoveOnFindWidget && editorFocus && findWidgetVisible && !replaceInputFocussed && !isComposing",
+      "when": "editorFocus && findInputFocussed && !replaceInputFocussed && !isComposing",
       "args": {
         "then": "emacs-mcx.moveBeginningOfLine"
       }
@@ -118,9 +118,9 @@
       "whens": ["editorTextFocus", "terminalFocus"]
     },
     {
-      "keys": ["end", "ctrl+e"],
+      "keys": ["ctrl+e"],
       "command": "emacs-mcx.isearchExit",
-      "when": "!config.emacs-mcx.cursorMoveOnFindWidget && editorFocus && findWidgetVisible && !replaceInputFocussed && !isComposing",
+      "when": "editorFocus && findInputFocussed && !replaceInputFocussed && !isComposing",
       "args": {
         "then": "emacs-mcx.moveEndOfLine"
       }
@@ -134,7 +134,7 @@
     {
       "key": "meta+f",
       "command": "emacs-mcx.isearchExit",
-      "when": "!config.emacs-mcx.cursorMoveOnFindWidget && editorFocus && findWidgetVisible && !replaceInputFocussed && !isComposing",
+      "when": "editorFocus && findInputFocussed && !replaceInputFocussed && !isComposing",
       "args": {
         "then": "emacs-mcx.forwardWord"
       }
@@ -148,7 +148,7 @@
     {
       "key": "meta+b",
       "command": "emacs-mcx.isearchExit",
-      "when": "!config.emacs-mcx.cursorMoveOnFindWidget && editorFocus && findWidgetVisible && !replaceInputFocussed && !isComposing",
+      "when": "editorFocus && findInputFocussed && !replaceInputFocussed && !isComposing",
       "args": {
         "then": "emacs-mcx.backwardWord"
       }
@@ -162,7 +162,7 @@
     {
       "key": "meta+m",
       "command": "emacs-mcx.isearchExit",
-      "when": "!config.emacs-mcx.cursorMoveOnFindWidget && editorFocus && findInputFocussed && !isComposing",
+      "when": "editorFocus && findInputFocussed && !replaceInputFocussed && !isComposing",
       "args": {
         "then": "emacs-mcx.backToIndentation"
       }
