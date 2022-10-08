@@ -10,6 +10,8 @@ import { MessageManager } from "./message";
 import { InputBoxMinibuffer } from "./minibuffer";
 import { PrefixArgumentHandler } from "./prefix-argument";
 
+const COMMAND_NAME_PREFIX = "emacs-mcx";
+
 interface PrefixableCommand {
     command: string;
     prefixArgumentKey?: string;
@@ -35,8 +37,6 @@ function isPrefixableCommandArgs(
     return true;
 }
 
-const COMMAND_NAME_PREFIX = "emacs-mcx";
-
 async function onPrefixArgumentChange(
     newPrefixArgument: number | undefined
 ): Promise<unknown> {
@@ -47,12 +47,12 @@ async function onPrefixArgumentChange(
     return Promise.all([
         vscode.commands.executeCommand(
             "setContext",
-            "emacs-mcx.prefixArgument",
+            `${COMMAND_NAME_PREFIX}.prefixArgument`,
             newPrefixArgument
         ),
         vscode.commands.executeCommand(
             "setContext",
-            "emacs-mcx.prefixArgumentExists",
+            `${COMMAND_NAME_PREFIX}.prefixArgumentExists`,
             newPrefixArgument != null
         ),
     ]);
@@ -66,7 +66,7 @@ async function onPrefixArgumentAcceptingStateChange(
     );
     return vscode.commands.executeCommand(
         "setContext",
-        "emacs-mcx.acceptingArgument",
+        `${COMMAND_NAME_PREFIX}.acceptingArgument`,
         newState
     );
 }
@@ -77,7 +77,7 @@ export function activate(context: vscode.ExtensionContext): void {
     context.subscriptions.push(WorkspaceConfigCache.instance);
     context.subscriptions.push(
         vscode.workspace.onDidChangeConfiguration((e) => {
-            if (e.affectsConfiguration("emacs-mcx")) {
+            if (e.affectsConfiguration(COMMAND_NAME_PREFIX)) {
                 Configuration.reload();
             }
         })
