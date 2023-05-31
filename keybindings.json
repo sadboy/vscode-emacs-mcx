@@ -21,6 +21,11 @@
         "listFocus && referenceSearchVisible && !inputFocus && !treeElementCanCollapse && !treeElementCanExpand"
       ]
     },
+    {
+      "keys": ["ctrl+shift+;"],
+      "command": "emacs-mcx.focusBreadcrumbs",
+      "whens": ["breadcrumbsPossible"]
+    },
     // right
     {
       "keys": ["right", "ctrl+f"],
@@ -284,7 +289,7 @@
       "keys": ["ctrl+meta+s", "ctrl+meta+r"],
       "command": "emacs-mcx.isearchBegin",
       "when": "editorFocus && !findInputFocussed",
-      "args": { "isRegex": true}
+      "args": { "isRegex": true }
     },
     {
       "key": "ctrl+s",

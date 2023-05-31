@@ -7,24 +7,19 @@ import {
     travelBackward as travelBackwardParagraph,
 } from "./helpers/paragraph";
 
-// TODO: be unnecessary
-export const moveCommandIds = [
-    "forwardChar",
-    "backwardChar",
-    "nextLine",
-    "previousLine",
-    "moveBeginningOfLine",
-    "moveEndOfLine",
-    "forwardWord",
-    "backwardWord",
-    "beginningOfBuffer",
-    "endOfBuffer",
-    "scrollUpCommand",
-    "scrollDownCommand",
-    "forwardParagraph",
-    "backwardParagraph",
-    "backToIndentation",
-];
+export class FocusBreadcrumbs extends EmacsCommand {
+    public static readonly id = "focusBreadcrumbs";
+
+    public async execute(
+        textEditor: vscode.TextEditor,
+        isInMarkMode: boolean,
+        prefixArgument: number | undefined
+    ): Promise<unknown> {
+        this.emacs.deactivateMark();
+        this.emacs.pushMark();
+        return vscode.commands.executeCommand("breadcrumbs.focusAndSelect");
+    }
+}
 
 export class RevealDefinition extends EmacsCommand {
     public static readonly id = "revealDefinition";
