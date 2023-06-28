@@ -2,7 +2,7 @@
 	"name": "emacs-mcx",
 	"displayName": "Awesome Emacs Keymap",
 	"description": "Emacs Friendly Keymap with multi cursor support, improved mark-mode experience, clipboard and kill-ring integration, and lots of improvements and bug fixes.",
-	"version": "44.1.21",
+	"version": "44.1.22",
 	"publisher": "tuttieee",
 	"repository": {
 		"type": "git",
@@ -1122,9 +1122,9 @@
 				"when": "listFocus && referenceSearchVisible && !inputFocus && !treeElementCanCollapse && !treeElementCanExpand"
 			},
 			{
-				"key": "ctrl+shift+;",
-				"command": "emacs-mcx.focusBreadcrumbs",
-				"when": "breadcrumbsPossible"
+				"key": "enter",
+				"command": "emacs-mcx.saveMarkAndSelect",
+				"when": "breadcrumbsActive && breadcrumbsVisible"
 			},
 			{
 				"key": "right",
@@ -2290,7 +2290,7 @@
 		"ttypescript": "^1.5.13",
 		"typescript": "^4.6.4",
 		"typescript-transform-paths": "^3.3.1",
-		"vsce": "^2.15.0",
+		"vsce": "^0.9.0",
 		"vscode-test": "^1.6.1",
 		"webpack": "^5.74.0",
 		"webpack-cli": "^4.10.0"
