@@ -7,8 +7,8 @@ import {
     travelBackward as travelBackwardParagraph,
 } from "./helpers/paragraph";
 
-export class FocusBreadcrumbs extends EmacsCommand {
-    public static readonly id = "focusBreadcrumbs";
+export class SaveMarkAndSelect extends EmacsCommand {
+    public static readonly id = "saveMarkAndSelect";
 
     public async execute(
         textEditor: vscode.TextEditor,
@@ -17,7 +17,7 @@ export class FocusBreadcrumbs extends EmacsCommand {
     ): Promise<unknown> {
         this.emacs.deactivateMark();
         this.emacs.pushMark();
-        return vscode.commands.executeCommand("breadcrumbs.focusAndSelect");
+        return vscode.commands.executeCommand("list.select");
     }
 }
 

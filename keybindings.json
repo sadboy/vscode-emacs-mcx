@@ -22,9 +22,9 @@
       ]
     },
     {
-      "keys": ["ctrl+shift+;"],
-      "command": "emacs-mcx.focusBreadcrumbs",
-      "whens": ["breadcrumbsPossible"]
+      "keys": ["enter"],
+      "command": "emacs-mcx.saveMarkAndSelect",
+      "whens": ["breadcrumbsActive && breadcrumbsVisible"]
     },
     // right
     {

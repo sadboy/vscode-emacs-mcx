@@ -23,7 +23,7 @@ const _CommandRegister = new Map(
         ExchangePointAndMarkCommand,
         RectangleModeCommand,
 
-        MoveCommands.FocusBreadcrumbs,
+        MoveCommands.SaveMarkAndSelect,
         MoveCommands.RevealDefinition,
         MoveCommands.RevealReference,
         MoveCommands.ForwardChar,
