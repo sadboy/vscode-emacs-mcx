@@ -218,7 +218,9 @@ export class ForwardWord extends EmacsCommand {
 
         return createParallel(repeat, () =>
             vscode.commands.executeCommand<void>(
-                isInMarkMode ? "cursorWordRightSelect" : "cursorWordRight"
+                isInMarkMode
+                    ? "cursorWordPartRightSelect"
+                    : "cursorWordPartRight"
             )
         );
     }
@@ -236,7 +238,7 @@ export class BackwardWord extends EmacsCommand {
 
         return createParallel(repeat, () =>
             vscode.commands.executeCommand<void>(
-                isInMarkMode ? "cursorWordLeftSelect" : "cursorWordLeft"
+                isInMarkMode ? "cursorWordPartLeftSelect" : "cursorWordPartLeft"
             )
         );
     }
